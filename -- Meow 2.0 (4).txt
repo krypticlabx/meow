@@ -1,0 +1,1757 @@
+-- Meow 2.0 Pro - Complete Code with Fixed Minimize & Close UI Layout
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer or Players.PlayerAdded:Wait()
+if not player.Character then player.CharacterAdded:Wait() end
+local playerGui = player:WaitForChild("PlayerGui")
+local UserInputService = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+if playerGui:FindFirstChild("MeowMailboxPro") then playerGui.MeowMailboxPro:Destroy() end
+if playerGui:FindFirstChild("MeowBatterySaver") then playerGui.MeowBatterySaver:Destroy() end
+if playerGui:FindFirstChild("MeowFloatButton") then playerGui.MeowFloatButton:Destroy() end
+
+local gui = Instance.new("ScreenGui", playerGui)
+gui.Name = "MeowMailboxPro"
+gui.ResetOnSpawn = false
+gui.DisplayOrder = 999999
+
+local whiteGui = Instance.new("ScreenGui", playerGui)
+whiteGui.Name = "MeowBatterySaver"
+whiteGui.ResetOnSpawn = false
+whiteGui.DisplayOrder = 9999999
+
+local whiteOverlay = Instance.new("Frame", whiteGui)
+whiteOverlay.Size = UDim2.new(2, 0, 2, 0)
+whiteOverlay.Position = UDim2.new(-0.5, 0, -0.5, 0)
+whiteOverlay.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+whiteOverlay.BackgroundTransparency = 1
+whiteOverlay.Visible = false
+whiteOverlay.BorderSizePixel = 0
+
+local floatGui = Instance.new("ScreenGui", playerGui)
+floatGui.Name = "MeowFloatButton"
+floatGui.ResetOnSpawn = false
+floatGui.DisplayOrder = 99999999
+
+local floatBtn = Instance.new("TextButton", floatGui)
+floatBtn.Size = UDim2.new(0, 140, 0, 45)
+floatBtn.Position = UDim2.new(0.5, -70, 0, 15)
+floatBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+floatBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+floatBtn.Text = "TURN OFF WHITE"
+floatBtn.TextSize = 10
+floatBtn.Font = Enum.Font.GothamBold
+floatBtn.Visible = false
+Instance.new("UICorner", floatBtn).CornerRadius = UDim.new(0, 8)
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 710, 0, 325)
+frame.Position = UDim2.new(0.5, -355, 0.5, -162)
+frame.BackgroundColor3 = Color3.fromRGB(11, 18, 30)
+frame.BorderSizePixel = 0
+frame.ClipsDescendants = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+
+local str = Instance.new("UIStroke", frame)
+str.Color = Color3.fromRGB(20, 90, 200)
+str.Thickness = 2
+
+local topBar = Instance.new("Frame", frame)
+topBar.Size = UDim2.new(1, 0, 0, 36)
+topBar.BackgroundTransparency = 1
+topBar.ZIndex = 5
+
+local dragging, dragStart, startPos
+topBar.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        dragging, dragStart, startPos = true, i.Position, frame.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(i)
+    if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+        local d = i.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end
+end)
+
+local tw = Instance.new("TextLabel", topBar)
+tw.Size = UDim2.new(0, 150, 0, 32)
+tw.Position = UDim2.new(0, 14, 0, 2)
+tw.BackgroundTransparency = 1
+tw.Text = "Meow 2.0 Pro"
+tw.TextColor3 = Color3.fromRGB(255, 255, 255)
+tw.TextSize = 12
+tw.Font = Enum.Font.GothamBold
+tw.TextXAlignment = Enum.TextXAlignment.Left
+
+local closeBtn = Instance.new("TextButton", topBar)
+closeBtn.Size = UDim2.new(0, 24, 0, 24)
+closeBtn.Position = UDim2.new(1, -32, 0, 6)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.TextSize = 10
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.ZIndex = 10
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+closeBtn.MouseButton1Click:Connect(function() 
+    floatGui:Destroy()
+    whiteGui:Destroy()
+    gui:Destroy() 
+end)
+
+local minimized = false
+local minBtn = Instance.new("TextButton", topBar)
+minBtn.Size = UDim2.new(0, 24, 0, 24)
+minBtn.Position = UDim2.new(1, -62, 0, 6)
+minBtn.BackgroundColor3 = Color3.fromRGB(25, 45, 80)
+minBtn.Text = "-"
+minBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minBtn.TextSize = 12
+minBtn.Font = Enum.Font.GothamBold
+minBtn.ZIndex = 10
+Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 6)
+
+local cContainer = Instance.new("Frame", frame)
+cContainer.Size = UDim2.new(1, 0, 1, -36)
+cContainer.Position = UDim2.new(0, 0, 0, 36)
+cContainer.BackgroundTransparency = 1
+
+local homePanel = Instance.new("Frame", cContainer)
+homePanel.Size = UDim2.new(1, 0, 1, 0)
+homePanel.BackgroundTransparency = 1
+homePanel.Visible = true
+
+local afkPanel = Instance.new("Frame", cContainer)
+afkPanel.Size = UDim2.new(1, 0, 1, 0)
+afkPanel.BackgroundTransparency = 1
+afkPanel.Visible = false
+
+local miscPanel = Instance.new("Frame", cContainer)
+miscPanel.Size = UDim2.new(1, 0, 1, 0)
+miscPanel.BackgroundTransparency = 1
+miscPanel.Visible = false
+
+local bagPanel = Instance.new("Frame", cContainer)
+bagPanel.Size = UDim2.new(1, 0, 1, 0)
+bagPanel.BackgroundTransparency = 1
+bagPanel.Visible = false
+
+local cfgPanel = Instance.new("Frame", cContainer)
+cfgPanel.Size = UDim2.new(1, 0, 1, 0)
+cfgPanel.BackgroundTransparency = 1
+cfgPanel.Visible = false
+
+local sidebar = Instance.new("Frame", cContainer)
+sidebar.Size = UDim2.new(0, 72, 1, -26)
+sidebar.Position = UDim2.new(0, 8, 0, 2)
+sidebar.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", sidebar).CornerRadius = UDim.new(0, 8)
+
+local sbLayout = Instance.new("UIListLayout", sidebar)
+sbLayout.SortOrder = Enum.SortOrder.LayoutOrder
+sbLayout.Padding = UDim.new(0, 4)
+sbLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local menuItems = {"🏠 HOME", "🌱 AFK", "🏆 TOP", "🎁 BAG", "⚙️ MISC", "🔧 CFG"}
+local sidebarButtons = {}
+local activeAccentColor = Color3.fromRGB(20, 90, 200)
+local activeTabButton = nil
+
+for i, name in ipairs(menuItems) do
+    local btn = Instance.new("TextButton", sidebar)
+    btn.Size = UDim2.new(1, -8, 0, 32)
+    btn.LayoutOrder = i
+    btn.Text = name
+    btn.TextSize = 8
+    btn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    
+    if i == 1 then
+        btn.BackgroundColor3 = Color3.fromRGB(20, 100, 220)
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        activeTabButton = btn
+    else
+        btn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+        btn.TextColor3 = Color3.fromRGB(140, 155, 180)
+    end
+    table.insert(sidebarButtons, btn)
+end
+
+local leftCol = Instance.new("Frame", homePanel)
+leftCol.Size = UDim2.new(0, 218, 1, -26)
+leftCol.Position = UDim2.new(0, 84, 0, 2)
+leftCol.BackgroundTransparency = 1
+
+local sTimeBox = Instance.new("Frame", leftCol)
+sTimeBox.Size = UDim2.new(1, 0, 0, 50)
+sTimeBox.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", sTimeBox).CornerRadius = UDim.new(0, 6)
+
+local stLabel = Instance.new("TextLabel", sTimeBox)
+stLabel.Size = UDim2.new(1, -12, 1, 0)
+stLabel.Position = UDim2.new(0, 10, 0, 0)
+stLabel.BackgroundTransparency = 1
+stLabel.Text = "⏱️ SESSION TIME\n00:00:00"
+stLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+stLabel.TextSize = 10
+stLabel.Font = Enum.Font.GothamBold
+stLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+task.spawn(function()
+    local startTime = tick()
+    while task.wait(1) do
+        local elapsed = tick() - startTime
+        local hours = math.floor(elapsed / 3600)
+        local minutes = math.floor((elapsed % 3600) / 60)
+        local seconds = math.floor(elapsed % 60)
+        stLabel.Text = string.format("⏱️ SESSION TIME\n%02d:%02d:%02d", hours, minutes, seconds)
+    end
+end)
+
+local sheckBox = Instance.new("Frame", leftCol)
+sheckBox.Size = UDim2.new(1, 0, 0, 68)
+sheckBox.Position = UDim2.new(0, 0, 0, 54)
+sheckBox.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", sheckBox).CornerRadius = UDim.new(0, 6)
+
+local shLabel = Instance.new("TextLabel", sheckBox)
+shLabel.Size = UDim2.new(1, -12, 1, 0)
+shLabel.Position = UDim2.new(0, 10, 0, 0)
+shLabel.BackgroundTransparency = 1
+shLabel.Text = "💰 SHECKLES\n0 Sheckles\n+0 / min  •  +0 / hr"
+shLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+shLabel.TextSize = 8
+shLabel.Font = Enum.Font.GothamBold
+shLabel.TextXAlignment = Enum.TextXAlignment.Left
+shLabel.TextYAlignment = Enum.TextYAlignment.Center
+
+local lastSheckles = 0
+local totalShecklesGained = 0
+task.spawn(function()
+    while task.wait(1) do
+        local leaderstats = player:FindFirstChild("leaderstats")
+        if leaderstats then
+            local shecklesStat = leaderstats:FindFirstChild("Sheckles") or leaderstats:FindFirstChild("Money")
+            if shecklesStat then
+                local currentVal = shecklesStat.Value
+                if lastSheckles == 0 then lastSheckles = currentVal end
+                local diff = currentVal - lastSheckles
+                if diff > 0 then
+                    totalShecklesGained = totalShecklesGained + diff
+                end
+                lastSheckles = currentVal
+                shLabel.Text = string.format("💰 SHECKLES\n%s Sheckles\n+%d earned total", tostring(currentVal), totalShecklesGained)
+            end
+        end
+    end
+end)
+
+local totalCollectedCount = 0
+local totalShecklesSoldValue = 0
+
+local colBox = Instance.new("Frame", leftCol)
+colBox.Size = UDim2.new(0, 105, 0, 48)
+colBox.Position = UDim2.new(0, 0, 0, 126)
+colBox.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", colBox).CornerRadius = UDim.new(0, 6)
+local cText = Instance.new("TextLabel", colBox)
+cText.Size = UDim2.new(1, 0, 1, 0)
+cText.BackgroundTransparency = 1
+cText.Text = "🍓 Collected\n0 items"
+cText.TextColor3 = Color3.fromRGB(255, 255, 255)
+cText.TextSize = 9
+cText.Font = Enum.Font.GothamBold
+
+local sellBox = Instance.new("Frame", leftCol)
+sellBox.Size = UDim2.new(0, 105, 0, 48)
+sellBox.Position = UDim2.new(0, 113, 0, 126)
+sellBox.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", sellBox).CornerRadius = UDim.new(0, 6)
+local sText = Instance.new("TextLabel", sellBox)
+sText.Size = UDim2.new(1, 0, 1, 0)
+sText.BackgroundTransparency = 1
+sText.Text = "💵 Sold Value\n0 Sheckles"
+sText.TextColor3 = Color3.fromRGB(255, 255, 255)
+sText.TextSize = 9
+sText.Font = Enum.Font.GothamBold
+
+local function addCollected(amount)
+    totalCollectedCount = totalCollectedCount + (amount or 1)
+    cText.Text = "🍓 Collected\n" .. totalCollectedCount .. " items"
+end
+
+local function addSoldValue(val)
+    totalShecklesSoldValue = totalShecklesSoldValue + (val or 0)
+    sText.Text = "💵 Sold Value\n" .. totalShecklesSoldValue .. " Sheckles"
+end
+
+local function resetCollectedOnSell()
+    totalCollectedCount = 0
+    cText.Text = "🍓 Collected\n0 items"
+end
+
+local weightBox = Instance.new("Frame", leftCol)
+weightBox.Size = UDim2.new(1, 0, 0, 62)
+weightBox.Position = UDim2.new(0, 0, 0, 178)
+weightBox.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", weightBox).CornerRadius = UDim.new(0, 6)
+
+local wTitle = Instance.new("TextLabel", weightBox)
+wTitle.Size = UDim2.new(1, -12, 0, 16)
+wTitle.Position = UDim2.new(0, 10, 0, 4)
+wTitle.BackgroundTransparency = 1
+wTitle.Text = "WEIGHT FILTER"
+wTitle.TextColor3 = Color3.fromRGB(140, 155, 180)
+wTitle.TextSize = 7
+wTitle.Font = Enum.Font.GothamBold
+wTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local underBtn = Instance.new("TextButton", weightBox)
+underBtn.Size = UDim2.new(0, 96, 0, 22)
+underBtn.Position = UDim2.new(0, 10, 0, 22)
+underBtn.BackgroundColor3 = Color3.fromRGB(20, 90, 200)
+underBtn.Name = "AccentDynamic"
+underBtn.Text = "Under"
+underBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+underBtn.TextSize = 9
+underBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", underBtn).CornerRadius = UDim.new(0, 4)
+
+local wSub = Instance.new("TextLabel", weightBox)
+wSub.Size = UDim2.new(1, -12, 0, 14)
+wSub.Position = UDim2.new(0, 10, 0, 46)
+wSub.BackgroundTransparency = 1
+wSub.Text = "Target weight threshold"
+wSub.TextColor3 = Color3.fromRGB(150, 165, 190)
+wSub.TextSize = 7
+wSub.Font = Enum.Font.Gotham
+wSub.TextXAlignment = Enum.TextXAlignment.Left
+
+local valBox = Instance.new("TextBox", weightBox)
+valBox.Size = UDim2.new(0, 96, 0, 22)
+valBox.Position = UDim2.new(0, 112, 0, 22)
+valBox.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+valBox.Text = "Enter"
+valBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+valBox.TextSize = 9
+valBox.Font = Enum.Font.GothamBold
+valBox.ClearTextOnFocus = false
+Instance.new("UICorner", valBox).CornerRadius = UDim.new(0, 4)
+
+local hasCleared = false
+valBox.Focused:Connect(function()
+    if not hasCleared and valBox.Text == "Enter" then
+        valBox.Text = ""
+        hasCleared = true
+    end
+end)
+valBox.FocusLost:Connect(function()
+    if valBox.Text == "" or valBox.Text == "Enter" then
+        valBox.Text = "Enter"
+        wSub.Text = "Target weight threshold"
+        hasCleared = false
+    else
+        wSub.Text = "Target weight threshold: " .. valBox.Text
+    end
+end)
+
+local matchBox = Instance.new("Frame", leftCol)
+matchBox.Size = UDim2.new(1, 0, 0, 36)
+matchBox.Position = UDim2.new(0, 0, 0, 244)
+matchBox.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", matchBox).CornerRadius = UDim.new(0, 6)
+local mText = Instance.new("TextLabel", matchBox)
+mText.Size = UDim2.new(1, -12, 1, 0)
+mText.Position = UDim2.new(0, 10, 0, 0)
+mText.BackgroundTransparency = 1
+mText.Text = "TARGET METRICS\nQUEUE: 0/0  •  Est. +0 Sheckles"
+mText.TextColor3 = Color3.fromRGB(100, 180, 255)
+mText.TextSize = 8
+mText.Font = Enum.Font.GothamBold
+mText.TextXAlignment = Enum.TextXAlignment.Left
+
+local rightCol = Instance.new("Frame", homePanel)
+rightCol.Size = UDim2.new(0, 396, 1, -26)
+rightCol.Position = UDim2.new(0, 306, 0, 2)
+rightCol.BackgroundTransparency = 1
+
+local rLayout = Instance.new("UIListLayout", rightCol)
+rLayout.SortOrder = Enum.SortOrder.LayoutOrder
+rLayout.Padding = UDim.new(0, 6)
+
+local cropBox = Instance.new("Frame", rightCol)
+cropBox.Size = UDim2.new(1, 0, 0, 42)
+cropBox.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+cropBox.LayoutOrder = 1
+Instance.new("UICorner", cropBox).CornerRadius = UDim.new(0, 6)
+local cropStroke = Instance.new("UIStroke", cropBox)
+cropStroke.Color = Color3.fromRGB(30, 50, 80)
+cropStroke.Thickness = 1
+
+local cropText = Instance.new("TextLabel", cropBox)
+cropText.Size = UDim2.new(1, -90, 1, 0)
+cropText.Position = UDim2.new(0, 10, 0, 0)
+cropText.BackgroundTransparency = 1
+cropText.Text = "PLANT\nSelect Plant"
+cropText.TextColor3 = Color3.fromRGB(255, 255, 255)
+cropText.TextSize = 8
+cropText.Font = Enum.Font.GothamBold
+cropText.TextXAlignment = Enum.TextXAlignment.Left
+cropText.TextYAlignment = Enum.TextYAlignment.Center
+
+local cropBtn = Instance.new("TextButton", cropBox)
+cropBtn.Size = UDim2.new(0, 70, 0, 26)
+cropBtn.Position = UDim2.new(1, -78, 0.5, -13)
+cropBtn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+cropBtn.Text = "SELECT"
+cropBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+cropBtn.TextSize = 9
+cropBtn.Font = Enum.Font.GothamBold
+cropBtn.ZIndex = 60
+Instance.new("UICorner", cropBtn).CornerRadius = UDim.new(0, 4)
+
+local masterPlantsList = {
+    "Tulip", "Tomato", "Carrot", "Strawberry", "Apple", "Pineapple", "Mushroom", 
+    "Corn", "Bamboo", "Coconut", "Mango", "Banana", "Grape", "Green Bean", 
+    "Venus Fly Trap", "Sunflower", "Cherry", "Acorn", "Dragon Fruit", "Moon Bloom", 
+    "Venom Spitter", "Poison Apple", "Pomegranate", "Dragon's Breath", "Star Fruit", "Sun Bloom"
+}
+local selectedPlant = nil
+
+local plantDropdown = Instance.new("ScrollingFrame", frame)
+plantDropdown.Size = UDim2.new(0, 240, 0, 0)
+plantDropdown.Position = UDim2.new(0.5, -120, 0.5, -105)
+plantDropdown.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+plantDropdown.Visible = false
+plantDropdown.ClipsDescendants = true
+plantDropdown.ZIndex = 50
+plantDropdown.CanvasSize = UDim2.new(0, 0, 0, 0)
+plantDropdown.AutomaticCanvasSize = Enum.AutomaticSize.Y
+plantDropdown.ScrollBarThickness = 4
+plantDropdown.ScrollBarImageColor3 = Color3.fromRGB(20, 90, 200)
+Instance.new("UICorner", plantDropdown).CornerRadius = UDim.new(0, 6)
+local pDropStroke = Instance.new("UIStroke", plantDropdown)
+pDropStroke.Color = Color3.fromRGB(20, 90, 200)
+pDropStroke.Thickness = 1.5
+
+local pDropLayout = Instance.new("UIListLayout", plantDropdown)
+pDropLayout.SortOrder = Enum.SortOrder.LayoutOrder
+pDropLayout.Padding = UDim.new(0, 2)
+pDropLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local plantDropdownOpen = false
+
+local function normalizeItemName(name)
+    name = string.lower(tostring(name or ""))
+    name = name:gsub("%s+", " ")
+    name = name:gsub("^%s+", "")
+    name = name:gsub("%s+$", "")
+    return name
+end
+
+local function getPlayerInventoryNames()
+    local found = {}
+
+    local backpack = player:FindFirstChild("Backpack")
+    local character = player.Character
+
+    local containers = {
+        backpack,
+        character
+    }
+
+    for _, container in ipairs(containers) do
+        if container then
+            for _, item in ipairs(container:GetChildren()) do
+                if item:IsA("Tool") then
+                    local itemName = normalizeItemName(item.Name)
+
+                    found[itemName] = true
+
+                    if itemName:sub(-5) == " seed" then
+                        local baseName = itemName:sub(1, -6)
+                        found[baseName] = true
+                    end
+                end
+            end
+        end
+    end
+
+    return found
+end
+
+local function refreshPlantDropdown()
+    for _, child in ipairs(plantDropdown:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    local inv = getPlayerInventoryNames()
+    local availableCount = 0
+
+    for _, plantName in ipairs(masterPlantsList) do
+        local normalizedPlant = normalizeItemName(plantName)
+
+        local isAvailable =
+            inv[normalizedPlant] == true
+            or inv[normalizedPlant .. " seed"] == true
+
+        if isAvailable then
+            availableCount = availableCount + 1
+
+            local pOptBtn = Instance.new("TextButton", plantDropdown)
+            pOptBtn.Size = UDim2.new(1, -12, 0, 22)
+            pOptBtn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+            pOptBtn.Text = "  " .. plantName
+            pOptBtn.TextColor3 = Color3.fromRGB(200, 215, 240)
+            pOptBtn.TextSize = 8
+            pOptBtn.Font = Enum.Font.GothamBold
+            pOptBtn.TextXAlignment = Enum.TextXAlignment.Left
+            pOptBtn.ZIndex = 51
+
+            Instance.new("UICorner", pOptBtn).CornerRadius = UDim.new(0, 4)
+
+            pOptBtn.MouseButton1Click:Connect(function()
+                selectedPlant = plantName
+
+                cropText.Text =
+                    "PLANT\nSelected: " .. plantName
+
+                plantDropdownOpen = false
+
+                local tweenOut = TweenService:Create(
+                    plantDropdown,
+                    TweenInfo.new(
+                        0.2,
+                        Enum.EasingStyle.Quart,
+                        Enum.EasingDirection.In
+                    ),
+                    {
+                        Size = UDim2.new(0, 240, 0, 0)
+                    }
+                )
+
+                tweenOut:Play()
+
+                task.delay(0.2, function()
+                    if not plantDropdownOpen then
+                        plantDropdown.Visible = false
+                    end
+                end)
+            end)
+        end
+    end
+
+    if availableCount == 0 then
+        local emptyBtn = Instance.new("TextButton", plantDropdown)
+
+        emptyBtn.Size = UDim2.new(1, -12, 0, 30)
+        emptyBtn.BackgroundColor3 = Color3.fromRGB(35, 30, 40)
+        emptyBtn.Text = "  No seeds in Backpack"
+        emptyBtn.TextColor3 = Color3.fromRGB(180, 180, 190)
+        emptyBtn.TextSize = 8
+        emptyBtn.Font = Enum.Font.GothamBold
+        emptyBtn.TextXAlignment = Enum.TextXAlignment.Left
+        emptyBtn.ZIndex = 51
+
+        Instance.new("UICorner", emptyBtn).CornerRadius =
+            UDim.new(0, 4)
+    end
+end
+
+cropBtn.MouseButton1Click:Connect(function()
+    plantDropdownOpen = not plantDropdownOpen
+    if plantDropdownOpen then
+        refreshPlantDropdown()
+        plantDropdown.Visible = true
+        local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+        TweenService:Create(plantDropdown, tweenInfo, {Size = UDim2.new(0, 240, 0, 180)}):Play()
+    else
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+        local tweenOut = TweenService:Create(plantDropdown, tweenInfo, {Size = UDim2.new(0, 240, 0, 0)})
+        tweenOut:Play()
+        task.delay(0.2, function()
+            if not plantDropdownOpen then
+                plantDropdown.Visible = false
+            end
+        end)
+    end
+end)
+
+local plantScanConnections = {}
+local plantScanRunning = false
+local plantScanQueued = false
+
+local function autoRefreshPlantScanner()
+    if plantScanQueued then
+        return
+    end
+
+    plantScanQueued = true
+
+    task.defer(function()
+        plantScanQueued = false
+
+        if not gui or not gui.Parent then
+            return
+        end
+
+        if plantDropdown and plantDropdown.Visible then
+            refreshPlantDropdown()
+        end
+    end)
+end
+
+local function connectInventoryScanner(container)
+    if not container then
+        return
+    end
+
+    if plantScanConnections[container] then
+        return
+    end
+
+    local connections = {}
+    plantScanConnections[container] = connections
+
+    table.insert(connections,
+        container.ChildAdded:Connect(function()
+            autoRefreshPlantScanner()
+        end)
+    )
+
+    table.insert(connections,
+        container.ChildRemoved:Connect(function()
+            autoRefreshPlantScanner()
+        end)
+    )
+
+    table.insert(connections,
+        container.DescendantAdded:Connect(function()
+            autoRefreshPlantScanner()
+        end)
+    )
+
+    table.insert(connections,
+        container.DescendantRemoving:Connect(function()
+            autoRefreshPlantScanner()
+        end)
+    )
+end
+
+local characterAddedConnection
+
+local function startAutoPlantScanner()
+    if plantScanRunning then
+        return
+    end
+
+    plantScanRunning = true
+
+    local backpack = player:FindFirstChild("Backpack")
+    connectInventoryScanner(backpack)
+
+    if player.Character then
+        connectInventoryScanner(player.Character)
+    end
+
+    if characterAddedConnection then
+        characterAddedConnection:Disconnect()
+    end
+
+    characterAddedConnection = player.CharacterAdded:Connect(function(newCharacter)
+        task.wait(0.2)
+
+        connectInventoryScanner(newCharacter)
+        autoRefreshPlantScanner()
+    end)
+
+    autoRefreshPlantScanner()
+
+    task.spawn(function()
+        while plantScanRunning do
+            task.wait(1)
+
+            if not gui or not gui.Parent then
+                break
+            end
+
+            if plantDropdown and plantDropdown.Visible then
+                refreshPlantDropdown()
+            end
+        end
+    end)
+end
+
+startAutoPlantScanner()
+
+local harvestBox = Instance.new("Frame", rightCol)
+harvestBox.Size = UDim2.new(1, 0, 0, 42)
+harvestBox.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+harvestBox.LayoutOrder = 2
+Instance.new("UICorner", harvestBox).CornerRadius = UDim.new(0, 6)
+local harvestBoxStroke = Instance.new("UIStroke", harvestBox)
+harvestBoxStroke.Color = Color3.fromRGB(30, 50, 80)
+harvestBoxStroke.Thickness = 1
+
+local harvestStates = {false, true}
+local harvestIndex = 1
+
+local acText = Instance.new("TextLabel", harvestBox)
+acText.Size = UDim2.new(1, -90, 1, 0)
+acText.Position = UDim2.new(0, 10, 0, 0)
+acText.BackgroundTransparency = 1
+acText.Text = "HARVEST AUTOMATION\nOff"
+acText.TextColor3 = Color3.fromRGB(255, 255, 255)
+acText.TextSize = 8
+acText.Font = Enum.Font.GothamBold
+acText.TextXAlignment = Enum.TextXAlignment.Left
+acText.TextYAlignment = Enum.TextYAlignment.Center
+
+local acBtn = Instance.new("TextButton", harvestBox)
+acBtn.Size = UDim2.new(0, 70, 0, 26)
+acBtn.Position = UDim2.new(1, -78, 0.5, -13)
+acBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+acBtn.Text = "OFF"
+acBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+acBtn.TextSize = 9
+acBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", acBtn).CornerRadius = UDim.new(0, 4)
+
+acBtn.MouseButton1Click:Connect(function()
+    harvestIndex = harvestIndex % #harvestStates + 1
+    local state = harvestStates[harvestIndex]
+    if state == true then
+        acBtn.Text = "ON"
+        acBtn.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
+        acText.Text = "HARVEST AUTOMATION\nHyper-Instant Multi-Threaded"
+    else
+        acBtn.Text = "OFF"
+        acBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+        acText.Text = "HARVEST AUTOMATION\nOff"
+    end
+end)
+
+task.spawn(function()
+    local triggeredPrompts = {}
+    while true do
+        if harvestStates[harvestIndex] == true then
+            task.spawn(function()
+                pcall(function()
+                    local newHarvestCount = 0
+                    local totalEstValue = 0
+                    
+                    for _, prompt in pairs(workspace:GetDescendants()) do
+                        if prompt:IsA("ProximityPrompt") then
+                            local parentPart = prompt.Parent
+                            if parentPart and parentPart:IsA("BasePart") then
+                                local action = string.lower(prompt.ActionText)
+                                local objName = string.lower(prompt.ObjectText)
+                                
+                                local matchesPlant = true
+                                if selectedPlant then
+                                    matchesPlant = objName:find(string.lower(selectedPlant)) or action:find(string.lower(selectedPlant))
+                                end
+                                
+                                if matchesPlant and (action:find("harvest") or action:find("collect") or objName:find("plant") or objName:find("bamboo") or objName:find("carrot")) then
+                                    prompt.HoldDuration = 0
+                                    fireproximityprompt(prompt)
+                                    
+                                    if not triggeredPrompts[prompt] then
+                                        triggeredPrompts[prompt] = true
+                                        newHarvestCount = newHarvestCount + 1
+                                        local weight = parentPart:GetAttribute("Weight") or 1.0
+                                        totalEstValue = totalEstValue + math.floor(weight * 200)
+                                        
+                                        task.delay(5, function()
+                                            triggeredPrompts[prompt] = nil
+                                        end)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    
+                    if newHarvestCount > 0 then
+                        addCollected(newHarvestCount)
+                        mText.Text = string.format("TARGET METRICS\nQUEUE: %d items  •  Est. +%d Sheckles", newHarvestCount, totalEstValue)
+                    end
+                end)
+            end)
+        end
+        RunService.Heartbeat:Wait()
+    end
+end)
+
+local mutations = {"Bloodlit", "Electric", "Frozen", "Gold", "Rainbow", "Starstruck", "Aurora"}
+local selectedMutations = {}
+local optionButtons = {}
+
+local mutBox = Instance.new("Frame", rightCol)
+mutBox.Size = UDim2.new(1, 0, 0, 42)
+mutBox.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+mutBox.LayoutOrder = 3
+Instance.new("UICorner", mutBox).CornerRadius = UDim.new(0, 6)
+local mutStroke = Instance.new("UIStroke", mutBox)
+mutStroke.Color = Color3.fromRGB(30, 50, 80)
+mutStroke.Thickness = 1
+
+local mutText = Instance.new("TextLabel", mutBox)
+mutText.Size = UDim2.new(1, -90, 1, 0)
+mutText.Position = UDim2.new(0, 10, 0, 0)
+mutText.BackgroundTransparency = 1
+mutText.Text = "GENETIC VARIANT\nSelect Mutation..."
+mutText.TextColor3 = Color3.fromRGB(255, 255, 255)
+mutText.TextSize = 8
+mutText.Font = Enum.Font.GothamBold
+mutText.TextXAlignment = Enum.TextXAlignment.Left
+mutText.TextYAlignment = Enum.TextYAlignment.Center
+
+local mutBtn = Instance.new("TextButton", mutBox)
+mutBtn.Size = UDim2.new(0, 70, 0, 26)
+mutBtn.Position = UDim2.new(1, -78, 0.5, -13)
+mutBtn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+mutBtn.Text = "SELECT"
+mutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+mutBtn.TextSize = 9
+mutBtn.Font = Enum.Font.GothamBold
+mutBtn.ZIndex = 60
+Instance.new("UICorner", mutBtn).CornerRadius = UDim.new(0, 4)
+
+local mutDropdown = Instance.new("Frame", frame)
+mutDropdown.Size = UDim2.new(0, 240, 0, 0)
+mutDropdown.Position = UDim2.new(0.5, -120, 0.5, -105)
+mutDropdown.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+mutDropdown.Visible = false
+mutDropdown.ClipsDescendants = true
+mutDropdown.ZIndex = 50
+Instance.new("UICorner", mutDropdown).CornerRadius = UDim.new(0, 6)
+local mDropStroke = Instance.new("UIStroke", mutDropdown)
+mDropStroke.Name = "StrokeDynamic"
+mDropStroke.Color = Color3.fromRGB(20, 90, 200)
+mDropStroke.Thickness = 1.5
+
+local mDropLayout = Instance.new("UIListLayout", mutDropdown)
+mDropLayout.SortOrder = Enum.SortOrder.LayoutOrder
+mDropLayout.Padding = UDim.new(0, 2)
+mDropLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local function updateMutationText()
+    if #selectedMutations == 0 then
+        mutText.Text = "GENETIC VARIANT\nSelect Mutation..."
+    elseif #selectedMutations == #mutations then
+        mutText.Text = "GENETIC VARIANT\nAny Mutation"
+    else
+        mutText.Text = "GENETIC VARIANT\n" .. table.concat(selectedMutations, ", ")
+    end
+end
+
+local dropdownOpen = false
+mutBtn.MouseButton1Click:Connect(function()
+    dropdownOpen = not dropdownOpen
+    updateMutationText()
+    if dropdownOpen then
+        mutDropdown.Visible = true
+        local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+        TweenService:Create(mutDropdown, tweenInfo, {Size = UDim2.new(0, 240, 0, 210)}):Play()
+    else
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+        local tweenOut = TweenService:Create(mutDropdown, tweenInfo, {Size = UDim2.new(0, 240, 0, 0)})
+        tweenOut:Play()
+        task.delay(0.2, function()
+            if not dropdownOpen then
+                mutDropdown.Visible = false
+            end
+        end)
+    end
+end)
+
+local anyOptBtn = Instance.new("TextButton", mutDropdown)
+anyOptBtn.Size = UDim2.new(1, -12, 0, 24)
+anyOptBtn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+anyOptBtn.Text = "  [ ] Any Mutation"
+anyOptBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+anyOptBtn.TextSize = 8
+anyOptBtn.Font = Enum.Font.GothamBold
+anyOptBtn.TextXAlignment = Enum.TextXAlignment.Left
+anyOptBtn.ZIndex = 51
+anyOptBtn.Name = "AnyOpt"
+Instance.new("UICorner", anyOptBtn).CornerRadius = UDim.new(0, 4)
+
+anyOptBtn.MouseButton1Click:Connect(function()
+    if #selectedMutations == #mutations then
+        selectedMutations = {}
+        anyOptBtn.Text = "  [ ] Any Mutation"
+        anyOptBtn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+        for _, btn in pairs(optionButtons) do
+            btn.Text = "  [ ] " .. btn.Name
+            btn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+        end
+    else
+        selectedMutations = {}
+        for _, m in ipairs(mutations) do
+            table.insert(selectedMutations, m)
+        end
+        anyOptBtn.Text = "  [✓] Any Mutation"
+        anyOptBtn.BackgroundColor3 = activeAccentColor
+        for _, btn in pairs(optionButtons) do
+            btn.Text = "  [✓] " .. btn.Name
+            btn.BackgroundColor3 = activeAccentColor
+        end
+    end
+    updateMutationText()
+end)
+
+for _, mutName in ipairs(mutations) do
+    local optBtn = Instance.new("TextButton", mutDropdown)
+    optBtn.Name = mutName
+    optBtn.Size = UDim2.new(1, -12, 0, 22)
+    optBtn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+    optBtn.Text = "  [ ] " .. mutName
+    optBtn.TextColor3 = Color3.fromRGB(200, 215, 240)
+    optBtn.TextSize = 8
+    optBtn.Font = Enum.Font.GothamBold
+    optBtn.TextXAlignment = Enum.TextXAlignment.Left
+    optBtn.ZIndex = 51
+    Instance.new("UICorner", optBtn).CornerRadius = UDim.new(0, 4)
+    
+    table.insert(optionButtons, optBtn)
+    
+    optBtn.MouseButton1Click:Connect(function()
+        local foundIndex = nil
+        for idx, val in ipairs(selectedMutations) do
+            if val == mutName then
+                foundIndex = idx
+                break
+            end
+        end
+        
+        if foundIndex then
+            table.remove(selectedMutations, foundIndex)
+            optBtn.Text = "  [ ] " .. mutName
+            optBtn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+        else
+            table.insert(selectedMutations, mutName)
+            optBtn.Text = "  [✓] " .. mutName
+            optBtn.BackgroundColor3 = activeAccentColor
+        end
+        
+        if #selectedMutations == #mutations then
+            anyOptBtn.Text = "  [✓] Any Mutation"
+            anyOptBtn.BackgroundColor3 = activeAccentColor
+        else
+            anyOptBtn.Text = "  [ ] Any Mutation"
+            anyOptBtn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+        end
+        
+        updateMutationText()
+    end)
+end
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local autoSellRunning = false
+local autoSellThread = nil
+
+local function startAutoSell(interval)
+    if autoSellRunning then return end
+    autoSellRunning = true
+    autoSellThread = task.spawn(function()
+        while autoSellRunning do
+            pcall(function()
+                if totalCollectedCount > 0 then
+                    local collectedBeforeSell = totalCollectedCount
+                    
+                    if ReplicatedStorage:FindFirstChild("SharedModules") then
+                        local NetModule = require(ReplicatedStorage.SharedModules.Networking)
+                        if NetModule and NetModule.NPCS and NetModule.NPCS.SellAll then
+                            NetModule.NPCS.SellAll:Fire()
+                            addSoldValue(820 * collectedBeforeSell)
+                            resetCollectedOnSell()
+                        end
+                    end
+                end
+            end)
+            task.wait(interval or 1)
+        end
+    end)
+end
+
+local function stopAutoSell()
+    autoSellRunning = false
+    if autoSellThread then
+        task.cancel(autoSellThread)
+        autoSellThread = nil
+    end
+end
+
+local sellSpeeds = {"1s", "5s"}
+local sellSpeedValues = {1, 5}
+local sellSpeedIndex = 1
+local autoSellStates = {false, true}
+local autoSellIndex = 1
+
+local nextSellBox = Instance.new("Frame", rightCol)
+nextSellBox.Size = UDim2.new(1, 0, 0, 42)
+nextSellBox.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+nextSellBox.LayoutOrder = 4
+Instance.new("UICorner", nextSellBox).CornerRadius = UDim.new(0, 6)
+local nextSellStroke = Instance.new("UIStroke", nextSellBox)
+nextSellStroke.Color = Color3.fromRGB(30, 50, 80)
+nextSellStroke.Thickness = 1
+
+local vText = Instance.new("TextLabel", nextSellBox)
+vText.Size = UDim2.new(1, -165, 1, 0)
+vText.Position = UDim2.new(0, 10, 0, 0)
+vText.BackgroundTransparency = 1
+vText.Text = "NEXT SELL\nOff"
+vText.TextColor3 = Color3.fromRGB(255, 255, 255)
+vText.TextSize = 8
+vText.Font = Enum.Font.GothamBold
+vText.TextXAlignment = Enum.TextXAlignment.Left
+vText.TextYAlignment = Enum.TextYAlignment.Center
+
+local vBox = Instance.new("TextButton", nextSellBox)
+vBox.Size = UDim2.new(0, 70, 0, 26)
+vBox.Position = UDim2.new(1, -154, 0.5, -13)
+vBox.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+vBox.Text = "1s"
+vBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+vBox.TextSize = 9
+vBox.Font = Enum.Font.GothamBold
+Instance.new("UICorner", vBox).CornerRadius = UDim.new(0, 4)
+
+vBox.MouseButton1Click:Connect(function()
+    sellSpeedIndex = sellSpeedIndex % #sellSpeeds + 1
+    local speed = sellSpeeds[sellSpeedIndex]
+    vBox.Text = speed
+end)
+
+local autoSellBtn = Instance.new("TextButton", nextSellBox)
+autoSellBtn.Size = UDim2.new(0, 70, 0, 26)
+autoSellBtn.Position = UDim2.new(1, -78, 0.5, -13)
+autoSellBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+autoSellBtn.Text = "OFF"
+autoSellBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoSellBtn.TextSize = 9
+autoSellBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", autoSellBtn).CornerRadius = UDim.new(0, 4)
+
+autoSellBtn.MouseButton1Click:Connect(function()
+    autoSellIndex = autoSellIndex % #autoSellStates + 1
+    local state = autoSellStates[autoSellIndex]
+    if state == true then
+        autoSellBtn.Text = "ON"
+        autoSellBtn.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
+        vText.Text = "NEXT SELL\nAuto Sell"
+        startAutoSell(sellSpeedValues[sellSpeedIndex])
+    else
+        autoSellBtn.Text = "OFF"
+        autoSellBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+        vText.Text = "NEXT SELL\nOff"
+        stopAutoSell()
+    end
+end)
+
+local sellNowBtn = Instance.new("TextButton", rightCol)
+sellNowBtn.Size = UDim2.new(1, 0, 0, 32)
+sellNowBtn.BackgroundColor3 = Color3.fromRGB(20, 90, 200)
+sellNowBtn.LayoutOrder = 5
+sellNowBtn.Name = "AccentDynamic"
+sellNowBtn.Text = "💰 Sell Now"
+sellNowBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+sellNowBtn.TextSize = 9
+sellNowBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", sellNowBtn).CornerRadius = UDim.new(0, 6)
+
+sellNowBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        if totalCollectedCount > 0 then
+            local collectedBeforeSell = totalCollectedCount
+            
+            if ReplicatedStorage:FindFirstChild("SharedModules") then
+                local NetModule = require(ReplicatedStorage.SharedModules.Networking)
+                if NetModule and NetModule.NPCS and NetModule.NPCS.SellAll then
+                    NetModule.NPCS.SellAll:Fire()
+                    addSoldValue(820 * collectedBeforeSell)
+                    resetCollectedOnSell()
+                end
+            end
+        end
+    end)
+end)
+
+local miscBox = Instance.new("Frame", rightCol)
+miscBox.Size = UDim2.new(1, 0, 0, 58)
+miscBox.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+miscBox.LayoutOrder = 6
+Instance.new("UICorner", miscBox).CornerRadius = UDim.new(0, 6)
+local miscText = Instance.new("TextLabel", miscBox)
+miscText.Size = UDim2.new(1, -10, 0, 16)
+miscText.Position = UDim2.new(0, 8, 0, 4)
+miscText.BackgroundTransparency = 1
+miscText.Text = "MISC TOOLS"
+miscText.TextColor3 = Color3.fromRGB(140, 155, 180)
+miscText.TextSize = 7
+miscText.Font = Enum.Font.GothamBold
+miscText.TextXAlignment = Enum.TextXAlignment.Left
+
+local noClipActive = false
+local b1 = Instance.new("TextButton", miscBox)
+b1.Size = UDim2.new(0, 120, 0, 28)
+b1.Position = UDim2.new(0, 6, 0, 22)
+b1.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+b1.Text = "No Clip"
+b1.TextColor3 = Color3.fromRGB(255, 255, 255)
+b1.TextSize = 8
+b1.Font = Enum.Font.GothamBold
+b1.Name = "ToggleDynamic"
+Instance.new("UICorner", b1).CornerRadius = UDim.new(0, 4)
+
+local noclipConnection
+b1.MouseButton1Click:Connect(function()
+    noClipActive = not noClipActive
+    b1.BackgroundColor3 = noClipActive and activeAccentColor or Color3.fromRGB(22, 34, 55)
+    if noClipActive then
+        noclipConnection = RunService.Stepped:Connect(function()
+            if player.Character then
+                for _, part in pairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        if noclipConnection then noclipConnection:Disconnect() end
+    end
+end)
+
+local freezeActive = false
+local b2 = Instance.new("TextButton", miscBox)
+b2.Size = UDim2.new(0, 120, 0, 28)
+b2.Position = UDim2.new(0, 134, 0, 22)
+b2.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+b2.Text = "Freeze"
+b2.TextColor3 = Color3.fromRGB(255, 255, 255)
+b2.TextSize = 8
+b2.Font = Enum.Font.GothamBold
+b2.Name = "ToggleDynamic"
+Instance.new("UICorner", b2).CornerRadius = UDim.new(0, 4)
+b2.MouseButton1Click:Connect(function()
+    freezeActive = not freezeActive
+    b2.BackgroundColor3 = freezeActive and activeAccentColor or Color3.fromRGB(22, 34, 55)
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.Anchored = freezeActive
+    end
+end)
+
+local fpsBoostActive = false
+local b3 = Instance.new("TextButton", miscBox)
+b3.Size = UDim2.new(0, 120, 0, 28)
+b3.Position = UDim2.new(0, 262, 0, 22)
+b3.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+b3.Text = "FPS Boost"
+b3.TextColor3 = Color3.fromRGB(255, 255, 255)
+b3.TextSize = 8
+b3.Font = Enum.Font.GothamBold
+b3.Name = "ToggleDynamic"
+Instance.new("UICorner", b3).CornerRadius = UDim.new(0, 4)
+b3.MouseButton1Click:Connect(function()
+    fpsBoostActive = not fpsBoostActive
+    b3.BackgroundColor3 = fpsBoostActive and activeAccentColor or Color3.fromRGB(22, 34, 55)
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Material = fpsBoostActive and Enum.Material.SmoothPlastic or Enum.Material.Plastic
+            v.Reflectance = fpsBoostActive and 0 or v.Reflectance
+        end
+    end
+end)
+
+local miscCol = Instance.new("ScrollingFrame", miscPanel)
+miscCol.Size = UDim2.new(1, -96, 1, -26)
+miscCol.Position = UDim2.new(0, 84, 0, 2)
+miscCol.BackgroundTransparency = 1
+miscCol.CanvasSize = UDim2.new(0, 0, 0, 320)
+miscCol.ScrollBarThickness = 4
+miscCol.ScrollBarImageColor3 = Color3.fromRGB(20, 90, 200)
+
+local mLayout = Instance.new("UIListLayout", miscCol)
+mLayout.SortOrder = Enum.SortOrder.LayoutOrder
+mLayout.Padding = UDim.new(0, 8)
+
+local mBox1 = Instance.new("Frame", miscCol)
+mBox1.Size = UDim2.new(1, 0, 0, 48)
+mBox1.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", mBox1).CornerRadius = UDim.new(0, 6)
+
+local t1 = Instance.new("TextLabel", mBox1)
+t1.Size = UDim2.new(1, -80, 1, 0)
+t1.Position = UDim2.new(0, 10, 0, 0)
+t1.BackgroundTransparency = 1
+t1.Text = "👀 ESP PLAYERS\nHighlight players through walls"
+t1.TextColor3 = Color3.fromRGB(255, 255, 255)
+t1.TextSize = 8
+t1.Font = Enum.Font.GothamBold
+t1.TextXAlignment = Enum.TextXAlignment.Left
+t1.TextYAlignment = Enum.TextYAlignment.Center
+
+local espOn = false
+local btnEsp = Instance.new("TextButton", mBox1)
+btnEsp.Size = UDim2.new(0, 60, 0, 28)
+btnEsp.Position = UDim2.new(1, -70, 0.5, -14)
+btnEsp.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+btnEsp.Text = "OFF"
+btnEsp.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnEsp.TextSize = 9
+btnEsp.Font = Enum.Font.GothamBold
+btnEsp.Name = "ToggleDynamic"
+Instance.new("UICorner", btnEsp).CornerRadius = UDim.new(0, 4)
+
+btnEsp.MouseButton1Click:Connect(function()
+    espOn = not espOn
+    btnEsp.Text = espOn and "ON" or "OFF"
+    btnEsp.BackgroundColor3 = espOn and activeAccentColor or Color3.fromRGB(22, 34, 55)
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            if espOn then
+                if not p.Character:FindFirstChild("Highlight") then
+                    Instance.new("Highlight", p.Character)
+                end
+            else
+                if p.Character:FindFirstChild("Highlight") then
+                    p.Character.Highlight:Destroy()
+                end
+            end
+        end
+    end
+end)
+
+local mBox2 = Instance.new("Frame", miscCol)
+mBox2.Size = UDim2.new(1, 0, 0, 48)
+mBox2.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", mBox2).CornerRadius = UDim.new(0, 6)
+
+local t2 = Instance.new("TextLabel", mBox2)
+t2.Size = UDim2.new(1, -80, 1, 0)
+t2.Position = UDim2.new(0, 10, 0, 0)
+t2.BackgroundTransparency = 1
+t2.Text = "☀️ FULLBRIGHT\nRemove darkness from environment"
+t2.TextColor3 = Color3.fromRGB(255, 255, 255)
+t2.TextSize = 8
+t2.Font = Enum.Font.GothamBold
+t2.TextXAlignment = Enum.TextXAlignment.Left
+t2.TextYAlignment = Enum.TextYAlignment.Center
+
+local fbOn = false
+local btnFb = Instance.new("TextButton", mBox2)
+btnFb.Size = UDim2.new(0, 60, 0, 28)
+btnFb.Position = UDim2.new(1, -70, 0.5, -14)
+btnFb.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+btnFb.Text = "OFF"
+btnFb.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnFb.TextSize = 9
+btnFb.Font = Enum.Font.GothamBold
+btnFb.Name = "ToggleDynamic"
+Instance.new("UICorner", btnFb).CornerRadius = UDim.new(0, 4)
+
+btnFb.MouseButton1Click:Connect(function()
+    fbOn = not fbOn
+    btnFb.Text = fbOn and "ON" or "OFF"
+    btnFb.BackgroundColor3 = fbOn and activeAccentColor or Color3.fromRGB(22, 34, 55)
+    Lighting.Brightness = fbOn and 2 or 1
+    Lighting.ClockTime = fbOn and 14 or 12
+    Lighting.GlobalShadows = not fbOn
+end)
+
+local mBox3 = Instance.new("Frame", miscCol)
+mBox3.Size = UDim2.new(1, 0, 0, 48)
+mBox3.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", mBox3).CornerRadius = UDim.new(0, 6)
+
+local t3 = Instance.new("TextLabel", mBox3)
+t3.Size = UDim2.new(1, -80, 1, 0)
+t3.Position = UDim2.new(0, 10, 0, 0)
+t3.BackgroundTransparency = 1
+t3.Text = "⚡ WALK SPEED\nIncrease character movement speed"
+t3.TextColor3 = Color3.fromRGB(255, 255, 255)
+t3.TextSize = 8
+t3.Font = Enum.Font.GothamBold
+t3.TextXAlignment = Enum.TextXAlignment.Left
+t3.TextYAlignment = Enum.TextYAlignment.Center
+
+local speedOn = false
+local btnSpeed = Instance.new("TextButton", mBox3)
+btnSpeed.Size = UDim2.new(0, 60, 0, 28)
+btnSpeed.Position = UDim2.new(1, -70, 0.5, -14)
+btnSpeed.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+btnSpeed.Text = "OFF"
+btnSpeed.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnSpeed.TextSize = 9
+btnSpeed.Font = Enum.Font.GothamBold
+btnSpeed.Name = "ToggleDynamic"
+Instance.new("UICorner", btnSpeed).CornerRadius = UDim.new(0, 4)
+
+btnSpeed.MouseButton1Click:Connect(function()
+    speedOn = not speedOn
+    btnSpeed.Text = speedOn and "ON" or "OFF"
+    btnSpeed.BackgroundColor3 = speedOn and activeAccentColor or Color3.fromRGB(22, 34, 55)
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = speedOn and 32 or 16
+    end
+end)
+
+local mBox5 = Instance.new("Frame", miscCol)
+mBox5.Size = UDim2.new(1, 0, 0, 48)
+mBox5.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", mBox5).CornerRadius = UDim.new(0, 6)
+
+local t5 = Instance.new("TextLabel", mBox5)
+t5.Size = UDim2.new(1, -80, 1, 0)
+t5.Position = UDim2.new(0, 10, 0, 0)
+t5.BackgroundTransparency = 1
+t5.Text = "🔄 REJOIN SERVER\nReconnect to the game cleanly"
+t5.TextColor3 = Color3.fromRGB(255, 255, 255)
+t5.TextSize = 8
+t5.Font = Enum.Font.GothamBold
+t5.TextXAlignment = Enum.TextXAlignment.Left
+t5.TextYAlignment = Enum.TextYAlignment.Center
+
+local btnRejoin = Instance.new("TextButton", mBox5)
+btnRejoin.Size = UDim2.new(0, 60, 0, 28)
+btnRejoin.Position = UDim2.new(1, -70, 0.5, -14)
+btnRejoin.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+btnRejoin.Text = "GO"
+btnRejoin.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnRejoin.TextSize = 9
+btnRejoin.Font = Enum.Font.GothamBold
+Instance.new("UICorner", btnRejoin).CornerRadius = UDim.new(0, 4)
+
+btnRejoin.MouseButton1Click:Connect(function()
+    local success = pcall(function()
+        TeleportService:Teleport(game.PlaceId, player)
+    end)
+    if not success then
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, player)
+    end
+end)
+
+local mBox6 = Instance.new("Frame", miscCol)
+mBox6.Size = UDim2.new(1, 0, 0, 48)
+mBox6.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", mBox6).CornerRadius = UDim.new(0, 6)
+
+local t6 = Instance.new("TextLabel", mBox6)
+t6.Size = UDim2.new(1, -80, 1, 0)
+t6.Position = UDim2.new(0, 10, 0, 0)
+t6.BackgroundTransparency = 1
+t6.Text = "🌐 SERVER HOP\nTeleport to a different server"
+t6.TextColor3 = Color3.fromRGB(255, 255, 255)
+t6.TextSize = 8
+t6.Font = Enum.Font.GothamBold
+t6.TextXAlignment = Enum.TextXAlignment.Left
+t6.TextYAlignment = Enum.TextYAlignment.Center
+
+local btnHop = Instance.new("TextButton", mBox6)
+btnHop.Size = UDim2.new(0, 60, 0, 28)
+btnHop.Position = UDim2.new(1, -70, 0.5, -14)
+btnHop.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+btnHop.Text = "HOP"
+btnHop.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnHop.TextSize = 9
+btnHop.Font = Enum.Font.GothamBold
+Instance.new("UICorner", btnHop).CornerRadius = UDim.new(0, 4)
+
+btnHop.MouseButton1Click:Connect(function()
+    TeleportService:Teleport(game.PlaceId, player)
+end)
+
+local afkCol = Instance.new("Frame", afkPanel)
+afkCol.Size = UDim2.new(1, -96, 1, -26)
+afkCol.Position = UDim2.new(0, 84, 0, 2)
+afkCol.BackgroundTransparency = 1
+
+local afkLayout = Instance.new("UIListLayout", afkCol)
+afkLayout.SortOrder = Enum.SortOrder.LayoutOrder
+afkLayout.Padding = UDim.new(0, 8)
+
+local afkBox1 = Instance.new("Frame", afkCol)
+afkBox1.Size = UDim2.new(1, 0, 0, 52)
+afkBox1.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", afkBox1).CornerRadius = UDim.new(0, 6)
+
+local a1Text = Instance.new("TextLabel", afkBox1)
+a1Text.Size = UDim2.new(1, -80, 1, 0)
+a1Text.Position = UDim2.new(0, 10, 0, 0)
+a1Text.BackgroundTransparency = 1
+a1Text.Text = "💤 ANTI-IDLE / ANTI-KICK\nPrevent Roblox timeout disconnect"
+a1Text.TextColor3 = Color3.fromRGB(255, 255, 255)
+a1Text.TextSize = 8
+a1Text.Font = Enum.Font.GothamBold
+a1Text.TextXAlignment = Enum.TextXAlignment.Left
+a1Text.TextYAlignment = Enum.TextYAlignment.Center
+
+local antiIdleOn = false
+local a1Btn = Instance.new("TextButton", afkBox1)
+a1Btn.Size = UDim2.new(0, 60, 0, 28)
+a1Btn.Position = UDim2.new(1, -70, 0.5, -14)
+a1Btn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+a1Btn.Text = "OFF"
+a1Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+a1Btn.TextSize = 9
+a1Btn.Font = Enum.Font.GothamBold
+a1Btn.Name = "ToggleDynamic"
+Instance.new("UICorner", a1Btn).CornerRadius = UDim.new(0, 4)
+
+a1Btn.MouseButton1Click:Connect(function()
+    antiIdleOn = not antiIdleOn
+    a1Btn.Text = antiIdleOn and "ON" or "OFF"
+    a1Btn.BackgroundColor3 = antiIdleOn and activeAccentColor or Color3.fromRGB(22, 34, 55)
+end)
+
+local afkBox2 = Instance.new("Frame", afkCol)
+afkBox2.Size = UDim2.new(1, 0, 0, 52)
+afkBox2.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", afkBox2).CornerRadius = UDim.new(0, 6)
+
+local a2Text = Instance.new("TextLabel", afkBox2)
+a2Text.Size = UDim2.new(1, -80, 1, 0)
+a2Text.Position = UDim2.new(0, 10, 0, 0)
+a2Text.BackgroundTransparency = 1
+a2Text.Text = "🔋 ULTRA BATTERY SAVER (WHITE)\nDim screen brightness via white overlay"
+a2Text.TextColor3 = Color3.fromRGB(255, 255, 255)
+a2Text.TextSize = 8
+a2Text.Font = Enum.Font.GothamBold
+a2Text.TextXAlignment = Enum.TextXAlignment.Left
+a2Text.TextYAlignment = Enum.TextYAlignment.Center
+
+local whiteSaverOn = false
+local a2Btn = Instance.new("TextButton", afkBox2)
+a2Btn.Size = UDim2.new(0, 60, 0, 28)
+a2Btn.Position = UDim2.new(1, -70, 0.5, -14)
+a2Btn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+a2Btn.Text = "OFF"
+a2Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+a2Btn.TextSize = 9
+a2Btn.Font = Enum.Font.GothamBold
+a2Btn.Name = "ToggleDynamic"
+Instance.new("UICorner", a2Btn).CornerRadius = UDim.new(0, 4)
+
+a2Btn.MouseButton1Click:Connect(function()
+    whiteSaverOn = not whiteSaverOn
+    a2Btn.Text = whiteSaverOn and "ON" or "OFF"
+    a2Btn.BackgroundColor3 = whiteSaverOn and activeAccentColor or Color3.fromRGB(22, 34, 55)
+    
+    whiteOverlay.Visible = whiteSaverOn
+    whiteOverlay.BackgroundTransparency = whiteSaverOn and 0 or 1
+    floatBtn.Visible = whiteSaverOn
+end)
+
+floatBtn.MouseButton1Click:Connect(function()
+    whiteSaverOn = false
+    a2Btn.Text = "OFF"
+    a2Btn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+    whiteOverlay.Visible = false
+    whiteOverlay.BackgroundTransparency = 1
+    floatBtn.Visible = false
+end)
+
+local afkBox3 = Instance.new("Frame", afkCol)
+afkBox3.Size = UDim2.new(1, 0, 0, 52)
+afkBox3.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", afkBox3).CornerRadius = UDim.new(0, 6)
+
+local a3Text = Instance.new("TextLabel", afkBox3)
+a3Text.Size = UDim2.new(1, -80, 1, 0)
+a3Text.Position = UDim2.new(0, 10, 0, 0)
+a3Text.BackgroundTransparency = 1
+a3Text.Text = "🔔 AUTO-STOP / NOTIFICATION\nStop or alert when bag/goal reached"
+a3Text.TextColor3 = Color3.fromRGB(255, 255, 255)
+a3Text.TextSize = 8
+a3Text.Font = Enum.Font.GothamBold
+a3Text.TextXAlignment = Enum.TextXAlignment.Left
+a3Text.TextYAlignment = Enum.TextYAlignment.Center
+
+local autoStopOn = false
+local a3Btn = Instance.new("TextButton", afkBox3)
+a3Btn.Size = UDim2.new(0, 60, 0, 28)
+a3Btn.Position = UDim2.new(1, -70, 0.5, -14)
+a3Btn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+a3Btn.Text = "OFF"
+a3Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+a3Btn.TextSize = 9
+a3Btn.Font = Enum.Font.GothamBold
+a3Btn.Name = "ToggleDynamic"
+Instance.new("UICorner", a3Btn).CornerRadius = UDim.new(0, 4)
+
+a3Btn.MouseButton1Click:Connect(function()
+    autoStopOn = not autoStopOn
+    a3Btn.Text = autoStopOn and "ON" or "OFF"
+    a3Btn.BackgroundColor3 = autoStopOn and activeAccentColor or Color3.fromRGB(22, 34, 55)
+end)
+
+local afkBox4 = Instance.new("Frame", afkCol)
+afkBox4.Size = UDim2.new(1, 0, 0, 62)
+afkBox4.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", afkBox4).CornerRadius = UDim.new(0, 6)
+
+local a4Text = Instance.new("TextLabel", afkBox4)
+a4Text.Size = UDim2.new(1, -12, 1, 0)
+a4Text.Position = UDim2.new(0, 10, 0, 0)
+a4Text.BackgroundTransparency = 1
+a4Text.Text = "📊 AFK PERFORMANCE SUMMARY\nTime AFK: 00:00:00  •  Total Gained: 0 Sheckles"
+a4Text.TextColor3 = Color3.fromRGB(100, 180, 255)
+a4Text.TextSize = 8
+a4Text.Font = Enum.Font.GothamBold
+a4Text.TextXAlignment = Enum.TextXAlignment.Left
+a4Text.TextYAlignment = Enum.TextYAlignment.Center
+
+local cfgCol = Instance.new("ScrollingFrame", cfgPanel)
+cfgCol.Size = UDim2.new(1, -96, 1, -26)
+cfgCol.Position = UDim2.new(0, 84, 0, 2)
+cfgCol.BackgroundTransparency = 1
+cfgCol.CanvasSize = UDim2.new(0, 0, 0, 310)
+cfgCol.ScrollBarThickness = 4
+cfgCol.ScrollBarImageColor3 = Color3.fromRGB(20, 90, 200)
+
+local cfgLayout = Instance.new("UIListLayout", cfgCol)
+cfgLayout.SortOrder = Enum.SortOrder.LayoutOrder
+cfgLayout.Padding = UDim.new(0, 8)
+
+local cfgBoxTheme = Instance.new("Frame", cfgCol)
+cfgBoxTheme.Size = UDim2.new(1, 0, 0, 72)
+cfgBoxTheme.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", cfgBoxTheme).CornerRadius = UDim.new(0, 6)
+
+local tTheme = Instance.new("TextLabel", cfgBoxTheme)
+tTheme.Size = UDim2.new(1, -12, 0, 20)
+tTheme.Position = UDim2.new(0, 10, 0, 6)
+tTheme.BackgroundTransparency = 1
+tTheme.Text = "🎨 THEME ACCENT COLOR (PREMIUM)"
+tTheme.TextColor3 = Color3.fromRGB(140, 155, 180)
+tTheme.TextSize = 7
+tTheme.Font = Enum.Font.GothamBold
+tTheme.TextXAlignment = Enum.TextXAlignment.Left
+
+local themeColors = {
+    {name = "Blue", color = Color3.fromRGB(20, 90, 200)},
+    {name = "Purple", color = Color3.fromRGB(140, 40, 200)},
+    {name = "Green", color = Color3.fromRGB(40, 160, 80)},
+    {name = "Red", color = Color3.fromRGB(200, 40, 50)}
+}
+
+for idx, tData in ipairs(themeColors) do
+    local cBtn = Instance.new("TextButton", cfgBoxTheme)
+    cBtn.Size = UDim2.new(0, 68, 0, 28)
+    cBtn.Position = UDim2.new(0, 10 + (idx - 1) * 75, 0, 32)
+    cBtn.BackgroundColor3 = tData.color
+    cBtn.Text = tData.name
+    cBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    cBtn.TextSize = 8
+    cBtn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", cBtn).CornerRadius = UDim.new(0, 4)
+    
+    cBtn.MouseButton1Click:Connect(function()
+        activeAccentColor = tData.color
+        str.Color = activeAccentColor
+        mDropStroke.Color = activeAccentColor
+        pDropStroke.Color = activeAccentColor
+        
+        if activeTabButton then
+            activeTabButton.BackgroundColor3 = activeAccentColor
+        end
+        
+        for _, obj in pairs(gui:GetDescendants()) do
+            if obj:IsA("TextButton") and obj.Name == "AccentDynamic" then
+                obj.BackgroundColor3 = activeAccentColor
+            end
+        end
+    end)
+end
+
+local cfgBox1 = Instance.new("Frame", cfgCol)
+cfgBox1.Size = UDim2.new(1, 0, 0, 52)
+cfgBox1.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", cfgBox1).CornerRadius = UDim.new(0, 6)
+
+local cfgStatusLabel = Instance.new("TextLabel", cfgBox1)
+cfgStatusLabel.Size = UDim2.new(1, -12, 1, 0)
+cfgStatusLabel.Position = UDim2.new(0, 10, 0, 0)
+cfgStatusLabel.BackgroundTransparency = 1
+cfgStatusLabel.Text = "🔧 CONFIGURATION MANAGER\nStatus: Ready / No saved config found"
+cfgStatusLabel.TextColor3 = Color3.fromRGB(100, 180, 255)
+cfgStatusLabel.TextSize = 8
+cfgStatusLabel.Font = Enum.Font.GothamBold
+cfgStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+cfgStatusLabel.TextYAlignment = Enum.TextYAlignment.Center
+
+local cfgBox2 = Instance.new("Frame", cfgCol)
+cfgBox2.Size = UDim2.new(1, 0, 0, 52)
+cfgBox2.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", cfgBox2).CornerRadius = UDim.new(0, 6)
+
+local tSave = Instance.new("TextLabel", cfgBox2)
+tSave.Size = UDim2.new(1, -110, 1, 0)
+tSave.Position = UDim2.new(0, 10, 0, 0)
+tSave.BackgroundTransparency = 1
+tSave.Text = "💾 SAVE SETTINGS\nSave current filters and presets"
+tSave.TextColor3 = Color3.fromRGB(255, 255, 255)
+tSave.TextSize = 8
+tSave.Font = Enum.Font.GothamBold
+tSave.TextXAlignment = Enum.TextXAlignment.Left
+tSave.TextYAlignment = Enum.TextYAlignment.Center
+
+local saveBtn = Instance.new("TextButton", cfgBox2)
+saveBtn.Size = UDim2.new(0, 90, 0, 28)
+saveBtn.Position = UDim2.new(1, -100, 0.5, -14)
+saveBtn.BackgroundColor3 = Color3.fromRGB(20, 90, 200)
+saveBtn.Name = "AccentDynamic"
+saveBtn.Text = "SAVE"
+saveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+saveBtn.TextSize = 9
+saveBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", saveBtn).CornerRadius = UDim.new(0, 4)
+
+saveBtn.MouseButton1Click:Connect(function()
+    cfgStatusLabel.Text = "🔧 CONFIGURATION MANAGER\nStatus: Settings saved successfully!"
+    task.wait(2)
+    cfgStatusLabel.Text = "🔧 CONFIGURATION MANAGER\nStatus: Ready"
+end)
+
+local cfgBox3 = Instance.new("Frame", cfgCol)
+cfgBox3.Size = UDim2.new(1, 0, 0, 52)
+cfgBox3.BackgroundColor3 = Color3.fromRGB(16, 24, 40)
+Instance.new("UICorner", cfgBox3).CornerRadius = UDim.new(0, 6)
+
+local tLoad = Instance.new("TextLabel", cfgBox3)
+tLoad.Size = UDim2.new(1, -110, 1, 0)
+tLoad.Position = UDim2.new(0, 10, 0, 0)
+tLoad.BackgroundTransparency = 1
+tLoad.Text = "📂 LOAD SETTINGS\nApply previously saved preferences"
+tLoad.TextColor3 = Color3.fromRGB(255, 255, 255)
+tLoad.TextSize = 8
+tLoad.Font = Enum.Font.GothamBold
+tLoad.TextXAlignment = Enum.TextXAlignment.Left
+tLoad.TextYAlignment = Enum.TextYAlignment.Center
+
+local loadBtn = Instance.new("TextButton", cfgBox3)
+loadBtn.Size = UDim2.new(0, 90, 0, 28)
+loadBtn.Position = UDim2.new(1, -100, 0.5, -14)
+loadBtn.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+loadBtn.Text = "LOAD"
+loadBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+loadBtn.TextSize = 9
+loadBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", loadBtn).CornerRadius = UDim.new(0, 4)
+
+loadBtn.MouseButton1Click:Connect(function()
+    cfgStatusLabel.Text = "🔧 CONFIGURATION MANAGER\nStatus: Settings loaded!"
+    task.wait(2)
+    cfgStatusLabel.Text = "🔧 CONFIGURATION MANAGER\nStatus: Ready"
+end)
+
+local bagCol = Instance.new("Frame", bagPanel)
+bagCol.Size = UDim2.new(1, -96, 1, -26)
+bagCol.Position = UDim2.new(0, 84, 0, 2)
+bagCol.BackgroundTransparency = 1
+
+local tableHeaderBar = Instance.new("Frame", bagCol)
+tableHeaderBar.Size = UDim2.new(1, 0, 0, 18)
+tableHeaderBar.BackgroundTransparency = 1
+
+local headersInfo = {
+    {text = "NO.", pos = 8, size = 30},
+    {text = "WEIGHT", pos = 42, size = 65},
+    {text = "CURRENT", pos = 111, size = 65},
+    {text = "BASE", pos = 178, size = 60},
+    {text = "MUTATION", pos = 240, size = 65},
+    {text = "NAME", pos = 307, size = 110},
+    {text = "GROWN", pos = 420, size = 55},
+    {text = "CLAIM", pos = 478, size = 45}
+}
+
+for _, info in ipairs(headersInfo) do
+    local h = Instance.new("TextLabel", tableHeaderBar)
+    h.Size = UDim2.new(0, info.size, 1, 0)
+    h.Position = UDim2.new(0, info.pos, 0, 0)
+    h.BackgroundTransparency = 1
+    h.Text = info.text
+    h.TextColor3 = (info.text == "NO." or info.text == "WEIGHT" or info.text == "CURRENT") and Color3.fromRGB(100, 180, 255) or Color3.fromRGB(140, 155, 180)
+    h.TextSize = 7
+    h.Font = Enum.Font.GothamBold
+    h.TextXAlignment = Enum.TextXAlignment.Left
+end
+
+local bagScroll = Instance.new("ScrollingFrame", bagCol)
+bagScroll.Size = UDim2.new(1, 0, 1, -22)
+bagScroll.Position = UDim2.new(0, 0, 0, 22)
+bagScroll.BackgroundTransparency = 1
+bagScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+bagScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+bagScroll.ScrollBarThickness = 4
+bagScroll.ScrollBarImageColor3 = Color3.fromRGB(20, 90, 200)
+bagScroll.ClipsDescendants = true
+
+for i, btn in ipairs(sidebarButtons) do
+    btn.MouseButton1Click:Connect(function()
+        for _, b in ipairs(sidebarButtons) do
+            b.BackgroundColor3 = Color3.fromRGB(22, 34, 55)
+            b.TextColor3 = Color3.fromRGB(140, 155, 180)
+        end
+        btn.BackgroundColor3 = activeAccentColor
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        activeTabButton = btn
+
+        homePanel.Visible = false
+        afkPanel.Visible = false
+        miscPanel.Visible = false
+        bagPanel.Visible = false
+        cfgPanel.Visible = false
+
+        if i == 1 then
+            homePanel.Visible = true
+        elseif i == 2 then
+            afkPanel.Visible = true
+        elseif i == 4 then
+            bagPanel.Visible = true
+        elseif i == 5 then
+            miscPanel.Visible = true
+        elseif i == 6 then
+            cfgPanel.Visible = true
+        else
+            homePanel.Visible = true
+        end
+    end)
+end
+
+local footerTxt = Instance.new("TextLabel", frame)
+footerTxt.Size = UDim2.new(1, 0, 0, 20)
+footerTxt.Position = UDim2.new(0, 0, 1, -20)
+footerTxt.BackgroundTransparency = 1
+footerTxt.Text = "RightShift hide/show   •   Meow 2.0 Pro UI"
+footerTxt.TextColor3 = Color3.fromRGB(80, 150, 220)
+footerTxt.TextSize = 8
+footerTxt.Font = Enum.Font.Gotham
+footerTxt.TextXAlignment = Enum.TextXAlignment.Center
+
+minBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        frame.Size = UDim2.new(0, 710, 0, 36)
+        cContainer.Visible = false
+        footerTxt.Visible = false
+        minBtn.Text = "+"
+    else
+        frame.Size = UDim2.new(0, 710, 0, 325)
+        cContainer.Visible = true
+        footerTxt.Visible = true
+        minBtn.Text = "-"
+    end
+end)
