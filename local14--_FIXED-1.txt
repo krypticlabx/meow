@@ -1,0 +1,1759 @@
+-- ClassiFox.txt (Integrated with Auto Steal & Humanoid Speed Movement)
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+
+if CoreGui:FindFirstChild("ClassiFoxUI") then
+	CoreGui.ClassiFoxUI:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local UICorner = Instance.new("UICorner")
+
+ScreenGui.Name = "ClassiFoxUI"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+
+local ToggleButton = Instance.new("ImageButton")
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Parent = ScreenGui
+ToggleButton.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Position = UDim2.new(0, 20, 0, 120)
+ToggleButton.Size = UDim2.new(0, 55, 0, 55)
+ToggleButton.Image = "rbxassetid://129545900336610"
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(1, 0)
+ToggleCorner.Parent = ToggleButton
+
+local ToggleGlow = Instance.new("UIStroke")
+ToggleGlow.Parent = ToggleButton
+ToggleGlow.Thickness = 1.5
+ToggleGlow.Transparency = 0.4
+ToggleGlow.Color = Color3.fromRGB(0, 170, 255)
+
+local btnDragging = false
+local btnDragInput, btnDragStart, btnStartPos
+local hasMoved = false
+
+ToggleButton.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		btnDragging = true
+		hasMoved = false
+		btnDragStart = input.Position
+		btnStartPos = ToggleButton.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				btnDragging = false
+			end
+		end)
+	end
+end)
+
+ToggleButton.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		btnDragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == btnDragInput and btnDragging then
+		local delta = input.Position - btnDragStart
+		if delta.Magnitude > 5 then
+			hasMoved = true
+		end
+		ToggleButton.Position = UDim2.new(btnStartPos.X.Scale, btnStartPos.X.Offset + delta.X, btnStartPos.Y.Scale, btnStartPos.Y.Offset + delta.Y)
+	end
+end)
+
+ToggleButton.MouseButton1Click:Connect(function()
+	if not hasMoved then
+		MainFrame.Visible = not MainFrame.Visible
+	end
+end)
+
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.5, -280, 0.5, -170)
+MainFrame.Size = UDim2.new(0, 560, 0, 340)
+
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+local dragging, dragInput, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = MainFrame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+MainFrame.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - dragStart
+		MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+local Sidebar = Instance.new("Frame")
+Sidebar.Parent = MainFrame
+Sidebar.BackgroundColor3 = Color3.fromRGB(11, 11, 15)
+Sidebar.BorderSizePixel = 0
+Sidebar.Size = UDim2.new(0, 110, 1, 0)
+
+local SidebarCorner = Instance.new("UICorner")
+SidebarCorner.CornerRadius = UDim.new(0, 8)
+SidebarCorner.Parent = Sidebar
+
+local Logo = Instance.new("TextLabel")
+Logo.Parent = Sidebar
+Logo.BackgroundTransparency = 1
+Logo.Position = UDim2.new(0, 10, 0, 15)
+Logo.Size = UDim2.new(0, 90, 0, 30)
+Logo.Font = Enum.Font.GothamBold
+Logo.RichText = true
+Logo.Text = '<font color="#00AAFF">Classi</font><font color="#FFAA00">Fox</font>'
+Logo.TextSize = 17
+Logo.TextXAlignment = Enum.TextXAlignment.Center
+
+local ProfileContainer = Instance.new("Frame")
+ProfileContainer.Parent = Sidebar
+ProfileContainer.BackgroundTransparency = 1
+ProfileContainer.Position = UDim2.new(0, 5, 1, -45)
+ProfileContainer.Size = UDim2.new(0, 100, 0, 35)
+
+local AvatarImage = Instance.new("ImageLabel")
+AvatarImage.Parent = ProfileContainer
+AvatarImage.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+AvatarImage.Position = UDim2.new(0, 2, 0, 2)
+AvatarImage.Size = UDim2.new(0, 31, 0, 31)
+AvatarImage.Image = ""
+local avCorner = Instance.new("UICorner") avCorner.CornerRadius = UDim.new(1, 0) avCorner.Parent = AvatarImage
+
+task.spawn(function()
+	pcall(function()
+		local content, isReady = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+		if isReady then
+			AvatarImage.Image = content
+		end
+	end)
+end)
+
+local UsernameLabel = Instance.new("TextLabel")
+UsernameLabel.Parent = ProfileContainer
+UsernameLabel.BackgroundTransparency = 1
+UsernameLabel.Position = UDim2.new(0, 38, 0, 8)
+UsernameLabel.Size = UDim2.new(0, 60, 0, 20)
+UsernameLabel.Font = Enum.Font.GothamMedium
+UsernameLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+UsernameLabel.TextSize = 9
+UsernameLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local realName = LocalPlayer.Name
+local nameLen = #realName
+local maskedName = realName
+if nameLen > 4 then
+	local startPart = string.sub(realName, 1, 2)
+	local endPart = string.sub(realName, nameLen - 1, nameLen)
+	maskedName = startPart .. "***" .. endPart
+else
+	maskedName = string.sub(realName, 1, 1) .. "***"
+end
+UsernameLabel.Text = maskedName
+
+local StealContainer = Instance.new("Frame")
+StealContainer.Name = "StealContainer"
+StealContainer.Parent = MainFrame
+StealContainer.BackgroundTransparency = 1
+StealContainer.Size = UDim2.new(1, 0, 1, 0)
+StealContainer.Visible = true
+
+local FlowContainer = Instance.new("Frame")
+FlowContainer.Name = "FlowContainer"
+FlowContainer.Parent = MainFrame
+FlowContainer.BackgroundTransparency = 1
+FlowContainer.Size = UDim2.new(1, 0, 1, 0)
+FlowContainer.Visible = false
+
+local FuseContainer = Instance.new("Frame")
+FuseContainer.Name = "FuseContainer"
+FuseContainer.Parent = MainFrame
+FuseContainer.BackgroundTransparency = 1
+FuseContainer.Size = UDim2.new(1, 0, 1, 0)
+FuseContainer.Visible = false
+
+local SettingsContainer = Instance.new("Frame")
+SettingsContainer.Name = "SettingsContainer"
+SettingsContainer.Parent = MainFrame
+SettingsContainer.BackgroundTransparency = 1
+SettingsContainer.Size = UDim2.new(1, 0, 1, 0)
+SettingsContainer.Visible = false
+
+local EmptyContainer = Instance.new("Frame")
+EmptyContainer.Name = "EmptyContainer"
+EmptyContainer.Parent = MainFrame
+EmptyContainer.BackgroundTransparency = 1
+EmptyContainer.Size = UDim2.new(1, 0, 1, 0)
+EmptyContainer.Visible = false
+
+local AreasOverlay = Instance.new("Frame")
+AreasOverlay.Name = "AreasOverlay"
+AreasOverlay.Parent = MainFrame
+AreasOverlay.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
+AreasOverlay.BorderSizePixel = 0
+AreasOverlay.Position = UDim2.new(0, 110, 0, 0)
+AreasOverlay.Size = UDim2.new(0, 450, 1, 0)
+AreasOverlay.Visible = false
+AreasOverlay.ZIndex = 10
+
+local AreasHeader = Instance.new("Frame")
+AreasHeader.Parent = AreasOverlay
+AreasHeader.BackgroundTransparency = 1
+AreasHeader.Size = UDim2.new(1, 0, 0, 45)
+AreasHeader.ZIndex = 11
+
+local BackButtonAreas = Instance.new("TextButton")
+BackButtonAreas.Parent = AreasHeader
+BackButtonAreas.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+BackButtonAreas.BorderSizePixel = 0
+BackButtonAreas.Position = UDim2.new(0, 15, 0, 10)
+BackButtonAreas.Size = UDim2.new(0, 60, 0, 24)
+BackButtonAreas.Font = Enum.Font.GothamBold
+BackButtonAreas.Text = "< Back"
+BackButtonAreas.TextColor3 = Color3.fromRGB(255, 255, 255)
+BackButtonAreas.TextSize = 11
+BackButtonAreas.ZIndex = 11
+local b_c = Instance.new("UICorner") b_c.CornerRadius = UDim.new(0, 6) b_c.Parent = BackButtonAreas
+
+local AreasTitleText = Instance.new("TextLabel")
+AreasTitleText.Parent = AreasHeader
+AreasTitleText.BackgroundTransparency = 1
+AreasTitleText.Position = UDim2.new(0, 85, 0, 10)
+AreasTitleText.Size = UDim2.new(0, 300, 0, 24)
+AreasTitleText.Font = Enum.Font.GothamBold
+AreasTitleText.Text = "Select Areas Filter"
+AreasTitleText.TextColor3 = Color3.fromRGB(240, 240, 240)
+AreasTitleText.TextSize = 14
+AreasTitleText.TextXAlignment = Enum.TextXAlignment.Left
+AreasTitleText.ZIndex = 11
+
+local AreasScrolling = Instance.new("ScrollingFrame")
+AreasScrolling.Parent = AreasOverlay
+AreasScrolling.BackgroundTransparency = 1
+AreasScrolling.Position = UDim2.new(0, 15, 0, 50)
+AreasScrolling.Size = UDim2.new(0, 420, 0, 275)
+AreasScrolling.CanvasSize = UDim2.new(0, 0, 0, 0)
+AreasScrolling.ScrollBarThickness = 3
+AreasScrolling.ZIndex = 11
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = AreasScrolling
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 6)
+
+UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	AreasScrolling.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 10)
+end)
+
+local areasList = {
+	"Forest", "Lake", "Desert", "Jungle", "Snow", 
+	"Volcano", "Abyss Ocean", "Prehistoric", 
+	"Cherry Blossom", "Titan Temple", "Light Dark"
+}
+
+local selectedAreas = {}
+local areaButtonInstances = {}
+local targetAreasFilterBtnRef = nil
+
+for _, areaName in ipairs(areasList) do
+	selectedAreas[areaName] = false
+	
+	local areaRowBtn = Instance.new("TextButton")
+	areaRowBtn.Parent = AreasScrolling
+	areaRowBtn.BackgroundColor3 = Color3.fromRGB(23, 23, 31)
+	areaRowBtn.BorderSizePixel = 0
+	areaRowBtn.Size = UDim2.new(1, 0, 0, 34)
+	areaRowBtn.AutoButtonColor = false
+	areaRowBtn.Text = ""
+	areaRowBtn.ZIndex = 11
+	local ar_c = Instance.new("UICorner") ar_c.CornerRadius = UDim.new(0, 6) ar_c.Parent = areaRowBtn
+	
+	local nameLbl = Instance.new("TextLabel")
+	nameLbl.Parent = areaRowBtn
+	nameLbl.BackgroundTransparency = 1
+	nameLbl.Position = UDim2.new(0, 12, 0, 0)
+	nameLbl.Size = UDim2.new(0, 250, 1, 0)
+	nameLbl.Font = Enum.Font.GothamMedium
+	nameLbl.Text = areaName
+	nameLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+	nameLbl.TextSize, nameLbl.TextXAlignment = 12, Enum.TextXAlignment.Left
+	nameLbl.ZIndex = 11
+	
+	local checkIndicator = Instance.new("TextLabel")
+	checkIndicator.Parent = areaRowBtn
+	checkIndicator.BackgroundTransparency = 1
+	checkIndicator.Position = UDim2.new(1, -40, 0, 0)
+	checkIndicator.Size = UDim2.new(0, 30, 1, 0)
+	checkIndicator.Font = Enum.Font.GothamBold
+	checkIndicator.Text = "✓"
+	checkIndicator.TextColor3 = Color3.fromRGB(80, 50, 160)
+	checkIndicator.TextSize = 14
+	checkIndicator.Visible = false
+	checkIndicator.ZIndex = 11
+	
+	areaButtonInstances[areaName] = {Button = areaRowBtn, Indicator = checkIndicator, Label = nameLbl}
+	
+	areaRowBtn.MouseButton1Click:Connect(function()
+		selectedAreas[areaName] = not selectedAreas[areaName]
+		local isSel = selectedAreas[areaName]
+		
+		checkIndicator.Visible = isSel
+		areaRowBtn.BackgroundColor3 = isSel and Color3.fromRGB(35, 35, 50) or Color3.fromRGB(23, 23, 31)
+		nameLbl.TextColor3 = isSel and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+		
+		local count = 0
+		local firstName = ""
+		for aName, state in pairs(selectedAreas) do
+			if state then
+				count = count + 1
+				if firstName == "" then firstName = aName end
+			end
+		end
+		
+		if targetAreasFilterBtnRef then
+			local txtChild = targetAreasFilterBtnRef:FindFirstChild("TextLabel")
+			if txtChild then
+				if count == 0 then
+					txtChild.Text = "Areas • None"
+				elseif count == 1 then
+					txtChild.Text = "Areas • " .. firstName
+				else
+					txtChild.Text = "Areas • " .. count .. " Selected"
+				end
+			end
+		end
+	end)
+end
+
+BackButtonAreas.MouseButton1Click:Connect(function()
+	AreasOverlay.Visible = false
+end)
+
+local SubTabSteal = Instance.new("TextButton")
+SubTabSteal.Parent = StealContainer
+SubTabSteal.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+SubTabSteal.BorderSizePixel = 0
+SubTabSteal.Position = UDim2.new(0, 125, 0, 12)
+SubTabSteal.Size = UDim2.new(0, 50, 0, 22)
+SubTabSteal.Font = Enum.Font.GothamMedium
+SubTabSteal.Text = "Steal"
+SubTabSteal.TextColor3 = Color3.fromRGB(255, 255, 255)
+SubTabSteal.TextSize = 11
+local s1Corner = Instance.new("UICorner") s1Corner.CornerRadius = UDim.new(0, 11) s1Corner.Parent = SubTabSteal
+
+local SubTabEggs = Instance.new("TextButton")
+SubTabEggs.Parent = StealContainer
+SubTabEggs.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+SubTabEggs.BorderSizePixel = 0
+SubTabEggs.Position = UDim2.new(0, 180, 0, 12)
+SubTabEggs.Size = UDim2.new(0, 50, 0, 22)
+SubTabEggs.Font = Enum.Font.GothamMedium
+SubTabEggs.Text = "Eggs"
+SubTabEggs.TextColor3 = Color3.fromRGB(150, 150, 170)
+SubTabEggs.TextSize = 11
+local s2Corner = Instance.new("UICorner") s2Corner.CornerRadius = UDim.new(0, 11) s2Corner.Parent = SubTabEggs
+
+local StealSubContent = Instance.new("ScrollingFrame")
+StealSubContent.Parent = StealContainer
+StealSubContent.BackgroundTransparency = 1
+StealSubContent.Position = UDim2.new(0, 120, 0, 42)
+StealSubContent.Size = UDim2.new(0, 435, 0, 288)
+StealSubContent.CanvasSize = UDim2.new(0, 0, 0, 400)
+StealSubContent.ScrollBarThickness = 3
+StealSubContent.Visible = true
+
+local EggsSubContent = Instance.new("ScrollingFrame")
+EggsSubContent.Parent = StealContainer
+EggsSubContent.BackgroundTransparency = 1
+EggsSubContent.Position = UDim2.new(0, 120, 0, 42)
+EggsSubContent.Size = UDim2.new(0, 435, 0, 288)
+EggsSubContent.CanvasSize = UDim2.new(0, 0, 0, 450)
+EggsSubContent.ScrollBarThickness = 3
+EggsSubContent.Visible = false
+
+local SpeedFrame = Instance.new("Frame")
+SpeedFrame.Parent = StealSubContent
+SpeedFrame.BackgroundColor3 = Color3.fromRGB(23, 23, 31)
+SpeedFrame.BorderSizePixel = 0
+SpeedFrame.Position = UDim2.new(0, 5, 0, 0)
+SpeedFrame.Size = UDim2.new(0, 205, 0, 130)
+
+local SpeedCorner = Instance.new("UICorner") SpeedCorner.CornerRadius = UDim.new(0, 6) SpeedCorner.Parent = SpeedFrame
+
+local SpeedTitle = Instance.new("TextLabel")
+SpeedTitle.Parent = SpeedFrame
+SpeedTitle.BackgroundTransparency = 1
+SpeedTitle.Position = UDim2.new(0, 12, 0, 10)
+SpeedTitle.Size = UDim2.new(0, 150, 0, 20)
+SpeedTitle.Font = Enum.Font.GothamBold
+SpeedTitle.Text = "Speed"
+SpeedTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+SpeedTitle.TextSize = 13
+SpeedTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local autoStealLabel = Instance.new("TextLabel")
+autoStealLabel.Parent = SpeedFrame
+autoStealLabel.BackgroundTransparency = 1
+autoStealLabel.Position = UDim2.new(0, 12, 0, 42)
+autoStealLabel.Size = UDim2.new(0, 100, 0, 20)
+autoStealLabel.Font = Enum.Font.Gotham
+autoStealLabel.Text = "Auto Steal"
+autoStealLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+autoStealLabel.TextSize = 11
+autoStealLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local switchBtn1 = Instance.new("TextButton")
+switchBtn1.Parent = SpeedFrame
+switchBtn1.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+switchBtn1.Position = UDim2.new(0, 145, 0, 42)
+switchBtn1.Size = UDim2.new(0, 45, 0, 20)
+switchBtn1.Text = "Off"
+switchBtn1.TextColor3 = Color3.fromRGB(150, 150, 150)
+switchBtn1.Font = Enum.Font.GothamMedium
+switchBtn1.TextSize = 10
+local s1_c = Instance.new("UICorner") s1_c.CornerRadius = UDim.new(0, 10) s1_c.Parent = switchBtn1
+
+local state1 = false
+switchBtn1.MouseButton1Click:Connect(function()
+	state1 = not state1
+	switchBtn1.BackgroundColor3 = state1 and Color3.fromRGB(80, 50, 160) or Color3.fromRGB(35, 35, 48)
+	switchBtn1.TextColor3 = state1 and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
+	switchBtn1.Text = state1 and "On" or "Off"
+end)
+
+local speedPresetLabel = Instance.new("TextLabel")
+speedPresetLabel.Parent = SpeedFrame
+speedPresetLabel.BackgroundTransparency = 1
+speedPresetLabel.Position = UDim2.new(0, 12, 0, 75)
+speedPresetLabel.Size = UDim2.new(0, 100, 0, 20)
+speedPresetLabel.Font = Enum.Font.Gotham
+speedPresetLabel.Text = "Speed Preset"
+speedPresetLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+speedPresetLabel.TextSize = 11
+speedPresetLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local sliderVal = Instance.new("TextLabel")
+sliderVal.Parent = SpeedFrame
+sliderVal.BackgroundTransparency = 1
+sliderVal.Position = UDim2.new(0, 150, 0, 75)
+sliderVal.Size = UDim2.new(0, 40, 0, 20)
+sliderVal.Font = Enum.Font.GothamMedium
+sliderVal.Text = "0"
+sliderVal.TextColor3 = Color3.fromRGB(200, 200, 200)
+sliderVal.TextSize = 11
+sliderVal.TextXAlignment = Enum.TextXAlignment.Right
+
+local sliderBar = Instance.new("Frame")
+sliderBar.Parent = SpeedFrame
+sliderBar.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+sliderBar.BorderSizePixel = 0
+sliderBar.Position = UDim2.new(0, 12, 0, 105)
+sliderBar.Size = UDim2.new(0, 180, 0, 4)
+local sb_c = Instance.new("UICorner") sb_c.CornerRadius = UDim.new(0, 2) sb_c.Parent = sliderBar
+
+local sliderKnob = Instance.new("Frame")
+sliderKnob.Parent = sliderBar
+sliderKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sliderKnob.BorderSizePixel = 0
+sliderKnob.Position = UDim2.new(0, 0, 0.5, -5)
+sliderKnob.Size = UDim2.new(0, 10, 0, 10)
+local sk_c = Instance.new("UICorner") sk_c.CornerRadius = UDim.new(1, 0) sk_c.Parent = sliderKnob
+
+local minVal, maxVal = 0, 1000
+local sliderDragging = false
+local currentSpeedValue = 0
+
+sliderBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		sliderDragging = true
+	end
+end)
+
+sliderKnob.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		sliderDragging = true
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		sliderDragging = false
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if sliderDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local pos = input.Position.X
+		local barPos = sliderBar.AbsolutePosition.X
+		local barSize = sliderBar.AbsoluteSize.X
+		local relativeX = math.clamp(pos - barPos, 0, barSize)
+		local scale = relativeX / barSize
+		
+		sliderKnob.Position = UDim2.new(scale, -5, 0.5, -5)
+		local val = math.floor(minVal + (maxVal - minVal) * scale)
+		currentSpeedValue = val
+		sliderVal.Text = tostring(val)
+	end
+end)
+
+local ModeFrame = Instance.new("Frame")
+ModeFrame.Parent = StealSubContent
+ModeFrame.BackgroundColor3 = Color3.fromRGB(23, 23, 31)
+ModeFrame.BorderSizePixel = 0
+ModeFrame.Position = UDim2.new(0, 215, 0, 0)
+ModeFrame.Size = UDim2.new(0, 205, 0, 95)
+local ModeCorner = Instance.new("UICorner") ModeCorner.CornerRadius = UDim.new(0, 6) ModeCorner.Parent = ModeFrame
+
+local ModeTitle = Instance.new("TextLabel")
+ModeTitle.Parent = ModeFrame
+ModeTitle.BackgroundTransparency = 1
+ModeTitle.Position = UDim2.new(0, 12, 0, 10)
+ModeTitle.Size = UDim2.new(0, 150, 0, 20)
+ModeTitle.Font = Enum.Font.GothamBold
+ModeTitle.Text = "Mode"
+ModeTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+ModeTitle.TextSize = 13
+ModeTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local tpLabel = Instance.new("TextLabel")
+tpLabel.Parent = ModeFrame
+tpLabel.BackgroundTransparency = 1
+tpLabel.Position = UDim2.new(0, 12, 0, 38)
+tpLabel.Size = UDim2.new(0, 100, 0, 20)
+tpLabel.Font = Enum.Font.Gotham
+tpLabel.Text = "Teleport to Egg"
+tpLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+tpLabel.TextSize = 11
+tpLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local switchBtn2 = Instance.new("TextButton")
+switchBtn2.Parent = ModeFrame
+switchBtn2.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+switchBtn2.Position = UDim2.new(0, 145, 0, 38)
+switchBtn2.Size = UDim2.new(0, 45, 0, 20)
+switchBtn2.Text = "Off"
+switchBtn2.TextColor3 = Color3.fromRGB(150, 150, 150)
+switchBtn2.Font = Enum.Font.GothamMedium
+switchBtn2.TextSize = 10
+local s2_c = Instance.new("UICorner") s2_c.CornerRadius = UDim.new(0, 10) s2_c.Parent = switchBtn2
+
+local state2 = false
+switchBtn2.MouseButton1Click:Connect(function()
+	state2 = not state2
+	switchBtn2.BackgroundColor3 = state2 and Color3.fromRGB(80, 50, 160) or Color3.fromRGB(35, 35, 48)
+	switchBtn2.TextColor3 = state2 and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
+	switchBtn2.Text = state2 and "On" or "Off"
+end)
+
+local flyLabel = Instance.new("TextLabel")
+flyLabel.Parent = ModeFrame
+flyLabel.BackgroundTransparency = 1
+flyLabel.Position = UDim2.new(0, 12, 0, 65)
+flyLabel.Size = UDim2.new(0, 100, 0, 20)
+flyLabel.Font = Enum.Font.Gotham
+flyLabel.Text = "Fly Mode"
+flyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+flyLabel.TextSize = 11
+flyLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local switchBtn3 = Instance.new("TextButton")
+switchBtn3.Parent = ModeFrame
+switchBtn3.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+switchBtn3.Position = UDim2.new(0, 145, 0, 65)
+switchBtn3.Size = UDim2.new(0, 45, 0, 20)
+switchBtn3.Text = "Off"
+switchBtn3.TextColor3 = Color3.fromRGB(150, 150, 150)
+switchBtn3.Font = Enum.Font.GothamMedium
+switchBtn3.TextSize = 10
+local s3_c = Instance.new("UICorner") s3_c.CornerRadius = UDim.new(0, 10) s3_c.Parent = switchBtn3
+
+local state3 = false
+switchBtn3.MouseButton1Click:Connect(function()
+	state3 = not state3
+	switchBtn3.BackgroundColor3 = state3 and Color3.fromRGB(80, 50, 160) or Color3.fromRGB(35, 35, 48)
+	switchBtn3.TextColor3 = state3 and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
+	switchBtn3.Text = state3 and "On" or "Off"
+end)
+
+local MutationFrame = Instance.new("Frame")
+MutationFrame.Parent = StealSubContent
+MutationFrame.BackgroundColor3 = Color3.fromRGB(23, 23, 31)
+MutationFrame.BorderSizePixel = 0
+MutationFrame.Position = UDim2.new(0, 5, 0, 138)
+MutationFrame.Size = UDim2.new(0, 205, 0, 160)
+local MutationCorner = Instance.new("UICorner") MutationCorner.CornerRadius = UDim.new(0, 6) MutationCorner.Parent = MutationFrame
+
+local MutationTitle = Instance.new("TextLabel")
+MutationTitle.Parent = MutationFrame
+MutationTitle.BackgroundTransparency = 1
+MutationTitle.Position = UDim2.new(0, 12, 0, 10)
+MutationTitle.Size = UDim2.new(0, 150, 0, 20)
+MutationTitle.Font = Enum.Font.GothamBold
+MutationTitle.Text = "Mutation Filters"
+MutationTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+MutationTitle.TextSize = 13
+MutationTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local mutBtn = Instance.new("TextButton")
+mutBtn.Parent = MutationFrame
+mutBtn.BackgroundColor3 = Color3.fromRGB(32, 32, 43)
+mutBtn.Position = UDim2.new(0, 12, 0, 38)
+mutBtn.Size = UDim2.new(0, 180, 0, 28)
+mutBtn.Font = Enum.Font.Gotham
+mutBtn.Text = "  Mutation • None"
+mutBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+mutBtn.TextSize = 11
+mutBtn.TextXAlignment = Enum.TextXAlignment.Left
+local m_c = Instance.new("UICorner") m_c.CornerRadius = UDim.new(0, 6) m_c.Parent = mutBtn
+
+local mutArrow = Instance.new("TextLabel")
+mutArrow.Parent = mutBtn
+mutArrow.BackgroundTransparency = 1
+mutArrow.Position = UDim2.new(1, -25, 0, 0)
+mutArrow.Size = UDim2.new(0, 20, 1, 0)
+mutArrow.Font = Enum.Font.GothamBold
+mutArrow.Text = ">"
+mutArrow.TextColor3 = Color3.fromRGB(100, 100, 255)
+mutArrow.TextSize = 11
+
+local allMutLabel = Instance.new("TextLabel")
+allMutLabel.Parent = MutationFrame
+allMutLabel.BackgroundTransparency = 1
+allMutLabel.Position = UDim2.new(0, 12, 0, 78)
+allMutLabel.Size = UDim2.new(0, 125, 0, 20)
+allMutLabel.Font = Enum.Font.Gotham
+allMutLabel.Text = "ALL Selected Must Mutated"
+allMutLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+allMutLabel.TextSize = 10
+allMutLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local switchBtn4 = Instance.new("TextButton")
+switchBtn4.Parent = MutationFrame
+switchBtn4.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+switchBtn4.Position = UDim2.new(0, 147, 0, 78)
+switchBtn4.Size = UDim2.new(0, 45, 0, 20)
+switchBtn4.Text = "Off"
+switchBtn4.TextColor3 = Color3.fromRGB(150, 150, 150)
+switchBtn4.Font = Enum.Font.GothamMedium
+switchBtn4.TextSize = 10
+local s4_c = Instance.new("UICorner") s4_c.CornerRadius = UDim.new(0, 10) s4_c.Parent = switchBtn4
+
+local state4 = false
+switchBtn4.MouseButton1Click:Connect(function()
+	state4 = not state4
+	switchBtn4.BackgroundColor3 = state4 and Color3.fromRGB(80, 50, 160) or Color3.fromRGB(35, 35, 48)
+	switchBtn4.TextColor3 = state4 and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
+	switchBtn4.Text = state4 and "On" or "Off"
+end)
+
+local mutEggLabel = Instance.new("TextLabel")
+mutEggLabel.Parent = MutationFrame
+mutEggLabel.BackgroundTransparency = 1
+mutEggLabel.Position = UDim2.new(0, 12, 0, 115)
+mutEggLabel.Size = UDim2.new(0, 125, 0, 20)
+mutEggLabel.Font = Enum.Font.Gotham
+mutEggLabel.Text = "Mutated Egg Only"
+mutEggLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+mutEggLabel.TextSize = 10
+mutEggLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local switchBtn5 = Instance.new("TextButton")
+switchBtn5.Parent = MutationFrame
+switchBtn5.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+switchBtn5.Position = UDim2.new(0, 147, 0, 115)
+switchBtn5.Size = UDim2.new(0, 45, 0, 20)
+switchBtn5.Text = "Off"
+switchBtn5.TextColor3 = Color3.fromRGB(150, 150, 150)
+switchBtn5.Font = Enum.Font.GothamMedium
+switchBtn5.TextSize = 10
+local s5_c = Instance.new("UICorner") s5_c.CornerRadius = UDim.new(0, 10) s5_c.Parent = switchBtn5
+
+local state5 = false
+switchBtn5.MouseButton1Click:Connect(function()
+	state5 = not state5
+	switchBtn5.BackgroundColor3 = state5 and Color3.fromRGB(80, 50, 160) or Color3.fromRGB(35, 35, 48)
+	switchBtn5.TextColor3 = state5 and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
+	switchBtn5.Text = state5 and "On" or "Off"
+end)
+
+local TargetFrame = Instance.new("Frame")
+TargetFrame.Parent = StealSubContent
+TargetFrame.BackgroundColor3 = Color3.fromRGB(23, 23, 31)
+TargetFrame.BorderSizePixel = 0
+TargetFrame.Position = UDim2.new(0, 215, 0, 102)
+TargetFrame.Size = UDim2.new(0, 205, 0, 205)
+local TargetCorner = Instance.new("UICorner") TargetCorner.CornerRadius = UDim.new(0, 6) TargetCorner.Parent = TargetFrame
+
+local TargetTitle = Instance.new("TextLabel")
+TargetTitle.Parent = TargetFrame
+TargetTitle.BackgroundTransparency = 1
+TargetTitle.Position = UDim2.new(0, 12, 0, 10)
+TargetTitle.Size = UDim2.new(0, 150, 0, 20)
+TargetTitle.Font = Enum.Font.GothamBold
+TargetTitle.Text = "Target Filters"
+TargetTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+TargetTitle.TextSize = 13
+TargetTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local function createFilterBtn(name, x, y)
+	local b = Instance.new("TextButton")
+	b.Parent = TargetFrame
+	b.BackgroundColor3 = Color3.fromRGB(32, 32, 43)
+	b.Position = UDim2.new(0, x, 0, y)
+	b.Size = UDim2.new(0, 88, 0, 28)
+	b.Font = Enum.Font.Gotham
+	b.Text = ""
+	local c = Instance.new("UICorner") c.CornerRadius = UDim.new(0, 6) c.Parent = b
+	
+	local txtLbl = Instance.new("TextLabel")
+	txtLbl.Parent = b
+	txtLbl.BackgroundTransparency = 1
+	txtLbl.Position = UDim2.new(0, 6, 0, 0)
+	txtLbl.Size = UDim2.new(1, -20, 1, 0)
+	txtLbl.Font = Enum.Font.Gotham
+	txtLbl.Text = name
+	txtLbl.TextColor3 = Color3.fromRGB(190, 190, 190)
+	txtLbl.TextSize = 9
+	txtLbl.TextXAlignment = Enum.TextXAlignment.Left
+	txtLbl.TextTruncate = Enum.TextTruncate.AtEnd
+
+	local arr = Instance.new("TextLabel")
+	arr.Parent = b
+	arr.BackgroundTransparency = 1
+	arr.Position = UDim2.new(1, -16, 0, 0)
+	arr.Size = UDim2.new(0, 12, 1, 0)
+	arr.Font = Enum.Font.GothamBold
+	arr.Text = ">"
+	arr.TextColor3 = Color3.fromRGB(100, 100, 255)
+	arr.TextSize = 10
+	return b
+end
+
+local areasFilterBtn = createFilterBtn("Areas • None", 12, 38)
+targetAreasFilterBtnRef = areasFilterBtn
+
+areasFilterBtn.MouseButton1Click:Connect(function()
+	AreasOverlay.Visible = true
+end)
+
+createFilterBtn("Categories • None", 105, 38)
+createFilterBtn("Rarity • None", 12, 74)
+createFilterBtn("Target Pref", 105, 74)
+
+local function createWeightInput(name, val, y)
+	local f = Instance.new("Frame")
+	f.Parent = TargetFrame
+	f.BackgroundColor3 = Color3.fromRGB(32, 32, 43)
+	f.Position = UDim2.new(0, 12, 0, y)
+	f.Size = UDim2.new(0, 180, 0, 26)
+	local c = Instance.new("UICorner") c.CornerRadius = UDim.new(0, 6) c.Parent = f
+	
+	local lbl = Instance.new("TextLabel")
+	lbl.Parent = f
+	lbl.BackgroundTransparency = 1
+	lbl.Position = UDim2.new(0, 8, 0, 0)
+	lbl.Size = UDim2.new(0, 120, 1, 0)
+	lbl.Font = Enum.Font.Gotham
+	lbl.Text = name
+	lbl.TextColor3 = Color3.fromRGB(180, 180, 180)
+	lbl.TextSize = 10
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local vlbl = Instance.new("TextLabel")
+	vlbl.Parent = f
+	vlbl.BackgroundTransparency = 1
+	vlbl.Position = UDim2.new(1, -30, 0, 0)
+	vlbl.Size = UDim2.new(0, 20, 1, 0)
+	vlbl.Font = Enum.Font.GothamMedium
+	vlbl.Text = val
+	vlbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+	vlbl.TextSize = 10
+end
+
+createWeightInput("Lowest Weight", "0", 110)
+createWeightInput("Base Weight", "0", 144)
+
+local plotLabel = Instance.new("TextLabel")
+plotLabel.Parent = TargetFrame
+plotLabel.BackgroundTransparency = 1
+plotLabel.Position = UDim2.new(0, 12, 0, 178)
+plotLabel.Size = UDim2.new(0, 100, 0, 20)
+plotLabel.Font = Enum.Font.Gotham
+plotLabel.Text = "Return to Plot"
+plotLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+plotLabel.TextSize = 10
+plotLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local switchBtn6 = Instance.new("TextButton")
+switchBtn6.Parent = TargetFrame
+switchBtn6.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+switchBtn6.Position = UDim2.new(0, 147, 0, 178)
+switchBtn6.Size = UDim2.new(0, 45, 0, 20)
+switchBtn6.Text = "Off"
+switchBtn6.TextColor3 = Color3.fromRGB(150, 150, 150)
+switchBtn6.Font = Enum.Font.GothamMedium
+switchBtn6.TextSize = 10
+local s6_c = Instance.new("UICorner") s6_c.CornerRadius = UDim.new(0, 10) s6_c.Parent = switchBtn6
+
+local state6 = false
+switchBtn6.MouseButton1Click:Connect(function()
+	state6 = not state6
+	switchBtn6.BackgroundColor3 = state6 and Color3.fromRGB(80, 50, 160) or Color3.fromRGB(35, 35, 48)
+	switchBtn6.TextColor3 = state6 and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
+	switchBtn6.Text = state6 and "On" or "Off"
+end)
+
+local FlowSubContent = Instance.new("ScrollingFrame")
+FlowSubContent.Parent = FlowContainer
+FlowSubContent.BackgroundTransparency = 1
+FlowSubContent.Position = UDim2.new(0, 120, 0, 12)
+FlowSubContent.Size = UDim2.new(0, 435, 0, 318)
+FlowSubContent.CanvasSize = UDim2.new(0, 0, 0, 310)
+FlowSubContent.ScrollBarThickness = 3
+FlowSubContent.Visible = true
+
+local function createFlowToggleRow(parent, titleText, yPos, callback)
+	local lbl = Instance.new("TextLabel")
+	lbl.Parent = parent
+	lbl.BackgroundTransparency = 1
+	lbl.Position = UDim2.new(0, 12, 0, yPos)
+	lbl.Size = UDim2.new(0, 125, 0, 20)
+	lbl.Font = Enum.Font.Gotham
+	lbl.Text = titleText
+	lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+	lbl.TextSize = 11
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local btn = Instance.new("TextButton")
+	btn.Parent = parent
+	btn.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+	btn.Position = UDim2.new(0, 147, 0, yPos)
+	btn.Size = UDim2.new(0, 45, 0, 20)
+	btn.Text = "Off"
+	btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+	btn.Font = Enum.Font.GothamMedium
+	btn.TextSize = 10
+	local bc = Instance.new("UICorner") bc.CornerRadius = UDim.new(0, 10) bc.Parent = btn
+	
+	local state = false
+	btn.MouseButton1Click:Connect(function()
+		state = not state
+		btn.BackgroundColor3 = state and Color3.fromRGB(80, 50, 160) or Color3.fromRGB(35, 35, 48)
+		btn.TextColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
+		btn.Text = state and "On" or "Off"
+		if callback then callback(state) end
+	end)
+	return btn
+end
+
+local function createFlowArrowButton(parent, titleText, yPos)
+	local b = Instance.new("TextButton")
+	b.Parent = parent
+	b.BackgroundColor3 = Color3.fromRGB(32, 32, 43)
+	b.Position = UDim2.new(0, 12, 0, yPos)
+	b.Size = UDim2.new(0, 180, 0, 26)
+	b.Font = Enum.Font.Gotham
+	b.Text = "  " .. titleText
+	b.TextColor3 = Color3.fromRGB(200, 200, 200)
+	b.TextSize = 11
+	b.TextXAlignment = Enum.TextXAlignment.Left
+	local c = Instance.new("UICorner") c.CornerRadius = UDim.new(0, 6) c.Parent = b
+	
+	local arr = Instance.new("TextLabel")
+	arr.Parent = b
+	arr.BackgroundTransparency = 1
+	arr.Position = UDim2.new(1, -25, 0, 0)
+	arr.Size = UDim2.new(0, 20, 1, 0)
+	arr.Font = Enum.Font.GothamBold
+	arr.Text = ">"
+	arr.TextColor3 = Color3.fromRGB(100, 100, 255)
+	arr.TextSize = 11
+	return b
+end
+
+local TrainingFrame = Instance.new("Frame")
+TrainingFrame.Parent = FlowSubContent
+TrainingFrame.BackgroundColor3 = Color3.fromRGB(23, 23, 31)
+TrainingFrame.BorderSizePixel = 0
+TrainingFrame.Position = UDim2.new(0, 5, 0, 0)
+TrainingFrame.Size = UDim2.new(0, 205, 0, 150)
+local tr_c = Instance.new("UICorner") tr_c.CornerRadius = UDim.new(0, 6) tr_c.Parent = TrainingFrame
+
+local trTitle = Instance.new("TextLabel")
+trTitle.Parent = TrainingFrame
+trTitle.BackgroundTransparency = 1
+trTitle.Position = UDim2.new(0, 12, 0, 10)
+trTitle.Size = UDim2.new(0, 150, 0, 20)
+trTitle.Font = Enum.Font.GothamBold
+trTitle.Text = "Training"
+trTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+trTitle.TextSize = 13
+trTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+createFlowToggleRow(TrainingFrame, "Auto Treadmill Training", 38)
+createFlowToggleRow(TrainingFrame, "Auto Buy Trail", 68)
+createFlowArrowButton(TrainingFrame, "Select Trail...", 98)
+
+local IndexUpgradesFrame = Instance.new("Frame")
+IndexUpgradesFrame.Parent = FlowSubContent
+IndexUpgradesFrame.BackgroundColor3 = Color3.fromRGB(23, 23, 31)
+IndexUpgradesFrame.BorderSizePixel = 0
+IndexUpgradesFrame.Position = UDim2.new(0, 215, 0, 0)
+IndexUpgradesFrame.Size = UDim2.new(0, 205, 0, 210)
+local iu_c = Instance.new("UICorner") iu_c.CornerRadius = UDim.new(0, 6) iu_c.Parent = IndexUpgradesFrame
+
+local iuTitle = Instance.new("TextLabel")
+iuTitle.Parent = IndexUpgradesFrame
+iuTitle.BackgroundTransparency = 1
+iuTitle.Position = UDim2.new(0, 12, 0, 10)
+iuTitle.Size = UDim2.new(0, 150, 0, 20)
+iuTitle.Font = Enum.Font.GothamBold
+iuTitle.Text = "Index"
+iuTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+iuTitle.TextSize = 13
+iuTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+createFlowToggleRow(IndexUpgradesFrame, "Auto Claim Index", 38)
+createFlowToggleRow(IndexUpgradesFrame, "Auto Claim Group Reward", 68)
+createFlowToggleRow(IndexUpgradesFrame, "Auto Equip Best Trail", 98)
+
+local upgradesTitle = Instance.new("TextLabel")
+upgradesTitle.Parent = IndexUpgradesFrame
+upgradesTitle.BackgroundTransparency = 1
+upgradesTitle.Position = UDim2.new(0, 12, 0, 128)
+upgradesTitle.Size = UDim2.new(0, 150, 0, 20)
+upgradesTitle.Font = Enum.Font.GothamBold
+upgradesTitle.Text = "Upgrades"
+upgradesTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+upgradesTitle.TextSize = 13
+upgradesTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+createFlowToggleRow(IndexUpgradesFrame, "Auto Buy Upgrades", 152)
+createFlowArrowButton(IndexUpgradesFrame, "Select Upgrade...", 182)
+FlowSubContent.CanvasSize = UDim2.new(0, 0, 0, 230)
+
+local FuseSubContent = Instance.new("ScrollingFrame")
+FuseSubContent.Parent = FuseContainer
+FuseSubContent.BackgroundTransparency = 1
+FuseSubContent.Position = UDim2.new(0, 120, 0, 12)
+FuseSubContent.Size = UDim2.new(0, 435, 0, 318)
+FuseSubContent.CanvasSize = UDim2.new(0, 0, 0, 310)
+FuseSubContent.ScrollBarThickness = 3
+FuseSubContent.Visible = true
+
+local LeftFuseFrame = Instance.new("Frame")
+LeftFuseFrame.Parent = FuseSubContent
+LeftFuseFrame.BackgroundColor3 = Color3.fromRGB(23, 23, 31)
+LeftFuseFrame.BorderSizePixel = 0
+LeftFuseFrame.Position = UDim2.new(0, 5, 0, 0)
+LeftFuseFrame.Size = UDim2.new(0, 205, 0, 295)
+local lf_c = Instance.new("UICorner") lf_c.CornerRadius = UDim.new(0, 6) lf_c.Parent = LeftFuseFrame
+
+local lfTitle = Instance.new("TextLabel")
+lfTitle.Parent = LeftFuseFrame
+lfTitle.BackgroundTransparency = 1
+lfTitle.Position = UDim2.new(0, 12, 0, 10)
+lfTitle.Size = UDim2.new(0, 150, 0, 20)
+lfTitle.Font = Enum.Font.GothamBold
+lfTitle.Text = "Auto Fuse Settings"
+lfTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+lfTitle.TextSize = 13
+lfTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local function createToggleRowParent(parent, titleText, yPos, callback)
+	local lbl = Instance.new("TextLabel")
+	lbl.Parent = parent
+	lbl.BackgroundTransparency = 1
+	lbl.Position = UDim2.new(0, 12, 0, yPos)
+	lbl.Size = UDim2.new(0, 120, 0, 20)
+	lbl.Font = Enum.Font.Gotham
+	lbl.Text = titleText
+	lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+	lbl.TextSize = 11
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local btn = Instance.new("TextButton")
+	btn.Parent = parent
+	btn.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+	btn.Position = UDim2.new(0, 147, 0, yPos)
+	btn.Size = UDim2.new(0, 45, 0, 20)
+	btn.Text = "Off"
+	btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+	btn.Font = Enum.Font.GothamMedium
+	btn.TextSize = 10
+	local bc = Instance.new("UICorner") bc.CornerRadius = UDim.new(0, 10) bc.Parent = btn
+	
+	local state = false
+	btn.MouseButton1Click:Connect(function()
+		state = not state
+		btn.BackgroundColor3 = state and Color3.fromRGB(80, 50, 160) or Color3.fromRGB(35, 35, 48)
+		btn.TextColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
+		btn.Text = state and "On" or "Off"
+		if callback then callback(state) end
+	end)
+	return btn
+end
+
+createToggleRowParent(LeftFuseFrame, "Auto Fuse", 38)
+createToggleRowParent(LeftFuseFrame, "Auto Fuse Pets", 68)
+
+local function createArrowButtonParent(parent, titleText, yPos)
+	local b = Instance.new("TextButton")
+	b.Parent = parent
+	b.BackgroundColor3 = Color3.fromRGB(32, 32, 43)
+	b.Position = UDim2.new(0, 12, 0, yPos)
+	b.Size = UDim2.new(0, 180, 0, 26)
+	b.Font = Enum.Font.Gotham
+	b.Text = "  " .. titleText
+	b.TextColor3 = Color3.fromRGB(200, 200, 200)
+	b.TextSize = 11
+	b.TextXAlignment = Enum.TextXAlignment.Left
+	local c = Instance.new("UICorner") c.CornerRadius = UDim.new(0, 6) c.Parent = b
+	
+	local arr = Instance.new("TextLabel")
+	arr.Parent = b
+	arr.BackgroundTransparency = 1
+	arr.Position = UDim2.new(1, -25, 0, 0)
+	arr.Size = UDim2.new(0, 20, 1, 0)
+	arr.Font = Enum.Font.GothamBold
+	arr.Text = ">"
+	arr.TextColor3 = Color3.fromRGB(100, 100, 255)
+	arr.TextSize = 11
+	return b
+end
+
+createArrowButtonParent(LeftFuseFrame, "Rarity", 98)
+createArrowButtonParent(LeftFuseFrame, "Fuse Mutations", 130)
+createArrowButtonParent(LeftFuseFrame, "Pick Group By", 162)
+
+createToggleRowParent(LeftFuseFrame, "Never Fuse Mutated", 194)
+createToggleRowParent(LeftFuseFrame, "Never Fuse Equipped", 224)
+createToggleRowParent(LeftFuseFrame, "Auto Complete Reveal", 254)
+
+local function createCustomSlider(parent, nameText, minV, maxV, suffix, yPos)
+	local lbl = Instance.new("TextLabel")
+	lbl.Parent = parent
+	lbl.BackgroundTransparency = 1
+	lbl.Position = UDim2.new(0, 12, 0, yPos)
+	lbl.Size = UDim2.new(0, 110, 0, 15)
+	lbl.Font = Enum.Font.Gotham
+	lbl.Text = nameText
+	lbl.TextColor3 = Color3.fromRGB(180, 180, 180)
+	lbl.TextSize = 10
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+	local valLbl = Instance.new("TextLabel")
+	valLbl.Parent = parent
+	valLbl.BackgroundTransparency = 1
+	valLbl.Position = UDim2.new(0, 125, 0, yPos)
+	valLbl.Size = UDim2.new(0, 67, 0, 15)
+	valLbl.Font = Enum.Font.GothamMedium
+	valLbl.Text = tostring(minV) .. suffix
+	valLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+	valLbl.TextSize = 10
+	valLbl.TextXAlignment = Enum.TextXAlignment.Right
+
+	local bar = Instance.new("Frame")
+	bar.Parent = parent
+	bar.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+	bar.BorderSizePixel = 0
+	bar.Position = UDim2.new(0, 12, 0, yPos + 18)
+	bar.Size = UDim2.new(0, 180, 0, 4)
+	local bc = Instance.new("UICorner") bc.CornerRadius = UDim.new(0, 2) bc.Parent = bar
+
+	local knob = Instance.new("Frame")
+	knob.Parent = bar
+	knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	knob.BorderSizePixel = 0
+	knob.Position = UDim2.new(0, 0, 0.5, -5)
+	knob.Size = UDim2.new(0, 10, 0, 10)
+	local kc = Instance.new("UICorner") kc.CornerRadius = UDim.new(1, 0) kc.Parent = knob
+
+	local draggingSlider = false
+	bar.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			draggingSlider = true
+		end
+	end)
+	knob.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			draggingSlider = true
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			draggingSlider = false
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if draggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local pos = input.Position.X
+			local barPos = bar.AbsolutePosition.X
+			local barSize = bar.AbsoluteSize.X
+			local relativeX = math.clamp(pos - barPos, 0, barSize)
+			local scale = relativeX / barSize
+			
+			knob.Position = UDim2.new(scale, -5, 0.5, -5)
+			local val = math.floor(minV + (maxV - minV) * scale)
+			valLbl.Text = tostring(val) .. suffix
+		end
+	end)
+end
+
+local RightSellFrame = Instance.new("Frame")
+RightSellFrame.Parent = FuseSubContent
+RightSellFrame.BackgroundColor3 = Color3.fromRGB(23, 23, 31)
+RightSellFrame.BorderSizePixel = 0
+RightSellFrame.Position = UDim2.new(0, 215, 0, 0)
+RightSellFrame.Size = UDim2.new(0, 205, 0, 260)
+local rs_c = Instance.new("UICorner") rs_c.CornerRadius = UDim.new(0, 6) rs_c.Parent = RightSellFrame
+
+local rsTitle = Instance.new("TextLabel")
+rsTitle.Parent = RightSellFrame
+rsTitle.BackgroundTransparency = 1
+rsTitle.Position = UDim2.new(0, 12, 0, 10)
+rsTitle.Size = UDim2.new(0, 150, 0, 20)
+rsTitle.Font = Enum.Font.GothamBold
+rsTitle.Text = "Auto Sell Pets"
+rsTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+rsTitle.TextSize = 13
+rsTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+createToggleRowParent(RightSellFrame, "Auto Sell Pets", 38)
+createArrowButtonParent(RightSellFrame, "Rarity", 68)
+createArrowButtonParent(RightSellFrame, "Sell Mutations", 100)
+createToggleRowParent(RightSellFrame, "Never Sell Mutated", 132)
+createToggleRowParent(RightSellFrame, "Never Sell Equipped", 162)
+
+createCustomSlider(LeftFuseFrame, "Maximum Scale to Fuse:", 0, 10, "x", 284)
+createCustomSlider(LeftFuseFrame, "Keep Per Pet Type:", 0, 20, "pets", 324)
+createCustomSlider(LeftFuseFrame, "Fuse Interval:", 0, 120, "s", 364)
+
+LeftFuseFrame.Size = UDim2.new(0, 205, 0, 400)
+FuseSubContent.CanvasSize = UDim2.new(0, 0, 0, 415)
+
+createCustomSlider(RightSellFrame, "Maximum Scale to Sell:", 0, 10, "x", 194)
+
+local EggsSubContent = Instance.new("ScrollingFrame")
+EggsSubContent.Parent = StealContainer
+EggsSubContent.BackgroundTransparency = 1
+EggsSubContent.Position = UDim2.new(0, 120, 0, 42)
+EggsSubContent.Size = UDim2.new(0, 435, 0, 288)
+EggsSubContent.CanvasSize = UDim2.new(0, 0, 0, 450)
+EggsSubContent.ScrollBarThickness = 3
+EggsSubContent.Visible = false
+
+local EggsMgmtFrame = Instance.new("Frame")
+EggsMgmtFrame.Parent = EggsSubContent
+EggsMgmtFrame.BackgroundColor3 = Color3.fromRGB(23, 23, 31)
+EggsMgmtFrame.BorderSizePixel = 0
+EggsMgmtFrame.Position = UDim2.new(0, 5, 0, 0)
+EggsMgmtFrame.Size = UDim2.new(0, 205, 0, 395)
+local em_c = Instance.new("UICorner") em_c.CornerRadius = UDim.new(0, 6) em_c.Parent = EggsMgmtFrame
+
+local emTitle = Instance.new("TextLabel")
+emTitle.Parent = EggsMgmtFrame
+emTitle.BackgroundTransparency = 1
+emTitle.Position = UDim2.new(0, 12, 0, 10)
+emTitle.Size = UDim2.new(0, 150, 0, 20)
+emTitle.Font = Enum.Font.GothamBold
+emTitle.Text = "Eggs Management"
+emTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+emTitle.TextSize = 13
+emTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+createArrowButtonParent(EggsMgmtFrame, "Categories", 38)
+createArrowButtonParent(EggsMgmtFrame, "Rarity", 70)
+createArrowButtonParent(EggsMgmtFrame, "Mutations", 102)
+
+createToggleRowParent(EggsMgmtFrame, "Auto Placed Selected", 134)
+createToggleRowParent(EggsMgmtFrame, "Auto Place All", 164)
+createToggleRowParent(EggsMgmtFrame, "Auto Hatch Right", 194)
+
+local function createExactInputBox(parent, labelText, yPos)
+	local lbl = Instance.new("TextLabel")
+	lbl.Parent = parent
+	lbl.BackgroundTransparency = 1
+	lbl.Position = UDim2.new(0, 12, 0, yPos)
+	lbl.Size = UDim2.new(0, 130, 0, 20)
+	lbl.Font = Enum.Font.Gotham
+	lbl.Text = labelText
+	lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+	lbl.TextSize = 10
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local textBox = Instance.new("TextBox")
+	textBox.Parent = parent
+	textBox.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+	textBox.Position = UDim2.new(0, 157, 0, yPos)
+	textBox.Size = UDim2.new(0, 35, 0, 20)
+	textBox.Font = Enum.Font.GothamMedium
+	textBox.Text = "0"
+	textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	textBox.TextSize = 10
+	textBox.ClearTextOnFocus = false
+	local tbc = Instance.new("UICorner") tbc.CornerRadius = UDim.new(0, 4) tbc.Parent = textBox
+	
+	textBox.FocusLost:Connect(function(enterPressed)
+		if textBox.Text == "" or tonumber(textBox.Text) == nil then
+			textBox.Text = "0"
+		else
+			textBox.Text = tostring(tonumber(textBox.Text))
+		end
+	end)
+	
+	return textBox
+end
+
+createExactInputBox(EggsMgmtFrame, "Place Only Above KG", 224)
+createExactInputBox(EggsMgmtFrame, "Place Only Below KG", 254)
+createExactInputBox(EggsMgmtFrame, "Place Only Below $/s", 284)
+
+local EggSellFrame = Instance.new("Frame")
+EggSellFrame.Parent = EggsSubContent
+EggSellFrame.BackgroundColor3 = Color3.fromRGB(23, 23, 31)
+EggSellFrame.BorderSizePixel = 0
+EggSellFrame.Position = UDim2.new(0, 215, 0, 0)
+EggSellFrame.Size = UDim2.new(0, 205, 0, 230)
+local es_c = Instance.new("UICorner") es_c.CornerRadius = UDim.new(0, 6) es_c.Parent = EggSellFrame
+
+local esTitle = Instance.new("TextLabel")
+esTitle.Parent = EggSellFrame
+esTitle.BackgroundTransparency = 1
+esTitle.Position = UDim2.new(0, 12, 0, 10)
+esTitle.Size = UDim2.new(0, 150, 0, 20)
+esTitle.Font = Enum.Font.GothamBold
+esTitle.Text = "Egg Sell"
+esTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+esTitle.TextSize = 13
+esTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+createArrowButtonParent(EggSellFrame, "Categories", 38)
+createArrowButtonParent(EggSellFrame, "Rarity", 70)
+createArrowButtonParent(EggSellFrame, "Mutations", 102)
+createToggleRowParent(EggSellFrame, "Auto Sell Egg", 134)
+
+local function createExactInputBoxSell(parent, labelText, yPos)
+	local lbl = Instance.new("TextLabel")
+	lbl.Parent = parent
+	lbl.BackgroundTransparency = 1
+	lbl.Position = UDim2.new(0, 12, 0, yPos)
+	lbl.Size = UDim2.new(0, 130, 0, 20)
+	lbl.Font = Enum.Font.Gotham
+	lbl.Text = labelText
+	lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+	lbl.TextSize = 10
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local textBox = Instance.new("TextBox")
+	textBox.Parent = parent
+	textBox.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+	textBox.Position = UDim2.new(0, 157, 0, yPos)
+	textBox.Size = UDim2.new(0, 35, 0, 20)
+	textBox.Font = Enum.Font.GothamMedium
+	textBox.Text = "0"
+	textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	textBox.TextSize = 10
+	textBox.ClearTextOnFocus = false
+	local tbc = Instance.new("UICorner") tbc.CornerRadius = UDim.new(0, 4) tbc.Parent = textBox
+	
+	textBox.FocusLost:Connect(function(enterPressed)
+		if textBox.Text == "" or tonumber(textBox.Text) == nil then
+			textBox.Text = "0"
+		else
+			textBox.Text = tostring(tonumber(textBox.Text))
+		end
+	end)
+	
+	return textBox
+end
+
+createExactInputBoxSell(EggSellFrame, "Sell Eggs Below KG", 164)
+createExactInputBoxSell(EggSellFrame, "Sell Eggs Below $/s", 194)
+EggsSubContent.CanvasSize = UDim2.new(0, 0, 0, 415)
+
+local SettingsSubContent = Instance.new("ScrollingFrame")
+SettingsSubContent.Parent = SettingsContainer
+SettingsSubContent.BackgroundTransparency = 1
+SettingsSubContent.Position = UDim2.new(0, 120, 0, 12)
+SettingsSubContent.Size = UDim2.new(0, 435, 0, 318)
+SettingsSubContent.CanvasSize = UDim2.new(0, 0, 0, 310)
+SettingsSubContent.ScrollBarThickness = 3
+SettingsSubContent.Visible = true
+
+local function createConfigInputRowTop(parent, labelText, defaultText, yPos)
+	local lbl = Instance.new("TextLabel")
+	lbl.Parent = parent
+	lbl.BackgroundTransparency = 1
+	lbl.Position = UDim2.new(0, 12, 0, yPos)
+	lbl.Size = UDim2.new(0, 181, 0, 16)
+	lbl.Font = Enum.Font.Gotham
+	lbl.Text = labelText
+	lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+	lbl.TextSize = 10
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local box = Instance.new("TextBox")
+	box.Parent = parent
+	box.BackgroundColor3 = Color3.fromRGB(32, 32, 43)
+	box.Position = UDim2.new(0, 12, 0, yPos + 16)
+	box.Size = UDim2.new(0, 181, 0, 24)
+	box.Font = Enum.Font.GothamMedium
+	box.Text = defaultText
+	box.TextColor3 = Color3.fromRGB(255, 255, 255)
+	box.TextSize = 10
+	box.ClearTextOnFocus = false
+	local bc = Instance.new("UICorner") bc.CornerRadius = UDim.new(0, 4) bc.Parent = box
+	return box
+end
+
+local function createConfigButtonRow(parent, btnText, yPos, callback)
+	local b = Instance.new("TextButton")
+	b.Parent = parent
+	b.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+	b.Position = UDim2.new(0, 12, 0, yPos)
+	b.Size = UDim2.new(0, 181, 0, 26)
+	b.Font = Enum.Font.GothamMedium
+	b.Text = btnText
+	b.TextColor3 = Color3.fromRGB(200, 200, 200)
+	b.TextSize = 11
+	local c = Instance.new("UICorner") c.CornerRadius = UDim.new(0, 6) c.Parent = b
+	
+	b.MouseButton1Click:Connect(function()
+		if callback then callback() end
+	end)
+	return b
+end
+
+local function createConfigArrowRow(parent, titleText, yPos)
+	local b = Instance.new("TextButton")
+	b.Parent = parent
+	b.BackgroundColor3 = Color3.fromRGB(32, 32, 43)
+	b.Position = UDim2.new(0, 12, 0, yPos)
+	b.Size = UDim2.new(0, 181, 0, 26)
+	b.Font = Enum.Font.Gotham
+	b.Text = "  " .. titleText
+	b.TextColor3 = Color3.fromRGB(200, 200, 200)
+	b.TextSize = 11
+	b.TextXAlignment = Enum.TextXAlignment.Left
+	local c = Instance.new("UICorner") c.CornerRadius = UDim.new(0, 6) c.Parent = b
+	
+	local arr = Instance.new("TextLabel")
+	arr.Parent = b
+	arr.BackgroundTransparency = 1
+	arr.Position = UDim2.new(1, -25, 0, 0)
+	arr.Size = UDim2.new(0, 20, 1, 0)
+	arr.Font = Enum.Font.GothamBold
+	arr.Text = ">"
+	arr.TextColor3 = Color3.fromRGB(100, 100, 255)
+	arr.TextSize = 11
+	return b
+end
+
+local function createThemingColorRow(parent, labelText, defaultColor, yPos)
+	local lbl = Instance.new("TextLabel")
+	lbl.Parent = parent
+	lbl.BackgroundTransparency = 1
+	lbl.Position = UDim2.new(0, 12, 0, yPos)
+	lbl.Size = UDim2.new(0, 120, 0, 24)
+	lbl.Font = Enum.Font.Gotham
+	lbl.Text = labelText
+	lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+	lbl.TextSize = 11
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local colorBtn = Instance.new("TextButton")
+	colorBtn.Parent = parent
+	colorBtn.BackgroundColor3 = defaultColor
+	colorBtn.Position = UDim2.new(0, 168, 0, yPos + 3)
+	colorBtn.Size = UDim2.new(0, 25, 0, 16)
+	colorBtn.Text = ""
+	local cc = Instance.new("UICorner") cc.CornerRadius = UDim.new(0, 4) cc.Parent = colorBtn
+	return colorBtn
+end
+
+local ConfigsFrame = Instance.new("Frame")
+ConfigsFrame.Parent = SettingsSubContent
+ConfigsFrame.BackgroundColor3 = Color3.fromRGB(23, 23, 31)
+ConfigsFrame.BorderSizePixel = 0
+ConfigsFrame.Position = UDim2.new(0, 5, 0, 0)
+ConfigsFrame.Size = UDim2.new(0, 205, 0, 310)
+local cf_c = Instance.new("UICorner") cf_c.CornerRadius = UDim.new(0, 6) cf_c.Parent = ConfigsFrame
+
+local cfTitle = Instance.new("TextLabel")
+cfTitle.Parent = ConfigsFrame
+cfTitle.BackgroundTransparency = 1
+cfTitle.Position = UDim2.new(0, 12, 0, 10)
+cfTitle.Size = UDim2.new(0, 150, 0, 20)
+cfTitle.Font = Enum.Font.GothamBold
+cfTitle.Text = "Configs"
+cfTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+cfTitle.TextSize = 13
+cfTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+createConfigInputRowTop(ConfigsFrame, "Config Name", "...", 36)
+local configDropdown = createConfigArrowRow(ConfigsFrame, "Config", 80)
+createConfigButtonRow(ConfigsFrame, "Create", 114, function() print("Config Created") end)
+createConfigButtonRow(ConfigsFrame, "Delete", 146, function() print("Config Deleted") end)
+createConfigButtonRow(ConfigsFrame, "Load", 178, function() print("Config Loaded") end)
+createConfigButtonRow(ConfigsFrame, "Save", 210, function() print("Config Saved") end)
+createFlowToggleRow(ConfigsFrame, "Auto Load", 242, function(state) print("Auto Load: ", state) end)
+createConfigArrowRow(ConfigsFrame, "All Accounts", 272)
+
+ConfigsFrame.Size = UDim2.new(0, 205, 0, 310)
+
+local ThemingFrame = Instance.new("Frame")
+ThemingFrame.Parent = SettingsSubContent
+ThemingFrame.BackgroundColor3 = Color3.fromRGB(23, 23, 31)
+ThemingFrame.BorderSizePixel = 0
+ThemingFrame.Position = UDim2.new(0, 215, 0, 0)
+ThemingFrame.Size = UDim2.new(0, 205, 0, 325)
+local th_c = Instance.new("UICorner") th_c.CornerRadius = UDim.new(0, 6) th_c.Parent = ThemingFrame
+
+local thTitle = Instance.new("TextLabel")
+thTitle.Parent = ThemingFrame
+thTitle.BackgroundTransparency = 1
+thTitle.Position = UDim2.new(0, 12, 0, 10)
+thTitle.Size = UDim2.new(0, 150, 0, 20)
+thTitle.Font = Enum.Font.GothamBold
+thTitle.Text = "Theming"
+thTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+thTitle.TextSize = 13
+thTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+createThemingColorRow(ThemingFrame, "Outline", Color3.fromRGB(50, 50, 65), 38)
+createThemingColorRow(ThemingFrame, "Text", Color3.fromRGB(255, 255, 255), 70)
+createThemingColorRow(ThemingFrame, "Hovered Element", Color3.fromRGB(45, 45, 60), 102)
+createThemingColorRow(ThemingFrame, "Element", Color3.fromRGB(32, 32, 43), 134)
+createThemingColorRow(ThemingFrame, "Section", Color3.fromRGB(23, 23, 31), 166)
+createThemingColorRow(ThemingFrame, "Tab", Color3.fromRGB(11, 11, 15), 198)
+createThemingColorRow(ThemingFrame, "Background", Color3.fromRGB(16, 16, 22), 230)
+createThemingColorRow(ThemingFrame, "Inactive Text", Color3.fromRGB(150, 150, 170), 262)
+
+local accentRowY = 294
+local accentLbl = Instance.new("TextLabel")
+accentLbl.Parent = ThemingFrame
+accentLbl.BackgroundTransparency = 1
+accentLbl.Position = UDim2.new(0, 12, 0, accentRowY)
+accentLbl.Size = UDim2.new(0, 120, 0, 24)
+accentLbl.Font = Enum.Font.Gotham
+accentLbl.Text = "Accent"
+accentLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+accentLbl.TextSize = 11
+accentLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+local accentBtn = Instance.new("TextButton")
+accentBtn.Parent = ThemingFrame
+accentBtn.BackgroundColor3 = Color3.fromRGB(80, 50, 160)
+accentBtn.Position = UDim2.new(0, 168, 0, accentRowY + 3)
+accentBtn.Size = UDim2.new(0, 25, 0, 16)
+accentBtn.Text = ""
+local ac = Instance.new("UICorner") ac.CornerRadius = UDim.new(0, 4) ac.Parent = accentBtn
+
+ThemingFrame.Size = UDim2.new(0, 205, 0, 325)
+SettingsSubContent.CanvasSize = UDim2.new(0, 0, 0, 335)
+
+local buttons = {}
+local function createTabButton(idName, displayName, yPos, active)
+	local btn = Instance.new("TextButton")
+	btn.Parent = Sidebar
+	btn.BackgroundColor3 = active and Color3.fromRGB(35, 35, 55) or Color3.fromRGB(11, 11, 15)
+	btn.BorderSizePixel = 0
+	btn.Position = UDim2.new(0, 10, 0, yPos)
+	btn.Size = UDim2.new(0, 90, 0, 28)
+	btn.Font = Enum.Font.GothamMedium
+	btn.Text = displayName
+	btn.TextColor3 = active and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 170)
+	btn.TextSize = 12
+	
+	local corner = Instance.new("UICorner") corner.CornerRadius = UDim.new(0, 6) corner.Parent = btn
+	buttons[idName] = btn
+	return btn
+end
+
+local btnSteal = createTabButton("Steal", "⟡ Steal", 70, true)
+local btnFlow = createTabButton("Flow", "⌁ Flow", 108, false)
+local btnFuse = createTabButton("Fuse", "✧ Fuse", 146, false)
+local btnVisual = createTabButton("Visual", "◉ Visual", 184, false)
+local btnSettings = createTabButton("Settings", "⚙ Settings", 222, false)
+
+local function switchTab(selectedTab)
+	for name, btn in pairs(buttons) do
+		if name == selectedTab then
+			btn.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		else
+			btn.BackgroundColor3 = Color3.fromRGB(11, 11, 15)
+			btn.TextColor3 = Color3.fromRGB(150, 150, 170)
+		end
+	end
+	
+	StealContainer.Visible = (selectedTab == "Steal")
+	FlowContainer.Visible = (selectedTab == "Flow")
+	FuseContainer.Visible = (selectedTab == "Fuse")
+	SettingsContainer.Visible = (selectedTab == "Settings")
+	EmptyContainer.Visible = (selectedTab ~= "Steal" and selectedTab ~= "Flow" and selectedTab ~= "Fuse" and selectedTab ~= "Settings")
+	
+	AreasOverlay.Visible = false
+end
+
+btnSteal.MouseButton1Click:Connect(function() switchTab("Steal") end)
+btnFlow.MouseButton1Click:Connect(function() switchTab("Flow") end)
+btnFuse.MouseButton1Click:Connect(function() switchTab("Fuse") end)
+btnVisual.MouseButton1Click:Connect(function() switchTab("Visual") end)
+btnSettings.MouseButton1Click:Connect(function() switchTab("Settings") end)
+
+SubTabSteal.MouseButton1Click:Connect(function()
+	SubTabSteal.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+	SubTabSteal.TextColor3 = Color3.fromRGB(255, 255, 255)
+	SubTabEggs.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+	SubTabEggs.TextColor3 = Color3.fromRGB(150, 150, 170)
+	
+	StealSubContent.Visible = true
+	EggsSubContent.Visible = false
+end)
+
+SubTabEggs.MouseButton1Click:Connect(function()
+	SubTabEggs.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+	SubTabEggs.TextColor3 = Color3.fromRGB(255, 255, 255)
+	SubTabSteal.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+	SubTabSteal.TextColor3 = Color3.fromRGB(150, 150, 170)
+	
+	EggsSubContent.Visible = true
+	StealSubContent.Visible = false
+end)
+
+-- FIXED EGG PATH FINDER LOGIC (Diretso sa Egg/Nests o EggSpot sa halip na sa Guard)
+local function getEggCFrame(areaName)
+	local guardAreasFolder = Workspace:FindFirstChild("World") 
+		and Workspace.World:FindFirstChild("Areas") 
+		and Workspace.World.Areas:FindFirstChild("GuardAreas")
+		
+	if guardAreasFolder then
+		local targetArea = guardAreasFolder:FindFirstChild(areaName)
+		if targetArea then
+			-- 1. Unang hahanapin ay ang Nests folder dahil dito nakalagay ang mismong mga EggSpot o Egg
+			local nests = targetArea:FindFirstChild("Nests")
+			if nests then
+				local nestModel = nests:FindFirstChild("NestModel")
+				if nestModel then
+					local eggSpot = nestModel:FindFirstChild("EggSpotBottom") or nestModel:FindFirstChild("EggFitBounds") or nestModel:FindFirstChild("Egg")
+					if eggSpot and eggSpot:IsA("BasePart") then
+						return eggSpot.CFrame
+					end
+				end
+			end
+			
+			-- 2. Kung walang Nests, hahanapin ang Egg o Eggs folder/part sa loob ng area
+			local directEgg = targetArea:FindFirstChild("Egg") or targetArea:FindFirstChild("Eggs")
+			if directEgg then
+				if directEgg:IsA("BasePart") then
+					return directEgg.CFrame
+				elseif directEgg:IsA("Model") then
+					local primary = directEgg.PrimaryPart or directEgg:FindFirstChildWhichIsA("BasePart")
+					if primary then return primary.CFrame end
+				end
+			end
+			
+			-- 3. Huling fallback (Sakaling wala sa taas, hahanapin ang Guard folder pero kukunin ang Egg kung naroon)
+			local guardFolder = targetArea:FindFirstChild("Guard")
+			if guardFolder then
+				local actualEggInGuard = guardFolder:FindFirstChild("Egg")
+				if actualEggInGuard and actualEggInGuard:IsA("BasePart") then
+					return actualEggInGuard.CFrame
+				end
+			end
+			
+			-- Fallback para sa Model o BasePart ng buong Area
+			if targetArea:IsA("Model") then
+				local primary = targetArea.PrimaryPart or targetArea:FindFirstChildWhichIsA("BasePart")
+				if primary then
+					return primary.CFrame
+				end
+			elseif targetArea:IsA("BasePart") then
+				return targetArea.CFrame
+			end
+		end
+	end
+	return nil
+end
+
+RunService.RenderStepped:Connect(function(deltaTime)
+	pcall(function()
+		local character = LocalPlayer.Character
+		if not character then return end
+
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		local rootPart = character:FindFirstChild("HumanoidRootPart")
+		if not humanoid or not rootPart then return end
+
+		-- =========================================================
+		-- AUTO STEAL
+		-- =========================================================
+		-- IMPORTANT:
+		-- No Humanoid cloning.
+		-- No Humanoid destroying.
+		-- No WalkSpeed modification while Auto Steal is OFF.
+		-- The game's original Humanoid remains active at all times.
+
+		if state1 then
+			-- Keep the real Humanoid upright while the script controls
+			-- the character's position.
+			humanoid.PlatformStand = false
+			humanoid.AutoRotate = true
+
+			-- Stop normal Humanoid movement only while Auto Steal is ON.
+			humanoid:Move(Vector3.zero, false)
+			rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+			rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+
+			for areaName, isSelected in pairs(selectedAreas) do
+				if isSelected then
+					local targetCF = getEggCFrame(areaName)
+
+					if targetCF then
+						local eggPosition = targetCF.Position
+						local currentPosition = rootPart.Position
+
+						-- EggSpotBottom is treated as the Egg's bottom point.
+						-- Place the HumanoidRootPart above it so the character
+						-- remains upright on the Egg.
+						local eggTopHeight = math.max(humanoid.HipHeight, 2)
+						local targetPosition =
+							eggPosition + Vector3.new(0, eggTopHeight, 0)
+
+						local currentHorizontal = Vector3.new(
+							currentPosition.X,
+							0,
+							currentPosition.Z
+						)
+
+						local targetHorizontal = Vector3.new(
+							targetPosition.X,
+							0,
+							targetPosition.Z
+						)
+
+						local offset = targetHorizontal - currentHorizontal
+						local distance = offset.Magnitude
+
+						if distance <= 0.15 then
+							-- Exact final position. Keep the character upright.
+							local look = rootPart.CFrame.LookVector
+							local flatLook = Vector3.new(look.X, 0, look.Z)
+
+							if flatLook.Magnitude < 0.001 then
+								flatLook = Vector3.new(0, 0, -1)
+							else
+								flatLook = flatLook.Unit
+							end
+
+							character:PivotTo(
+								CFrame.lookAt(
+									Vector3.new(
+										targetPosition.X,
+										targetPosition.Y,
+										targetPosition.Z
+									),
+									Vector3.new(
+										targetPosition.X,
+										targetPosition.Y,
+										targetPosition.Z
+									) + flatLook,
+									Vector3.new(0, 1, 0)
+								)
+							)
+
+							rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+							rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+							humanoid:Move(Vector3.zero, false)
+
+						else
+							-- Move using PivotTo with a clamped frame distance.
+							-- This prevents overshooting the Egg.
+							local direction = offset.Unit
+							local speed = math.max(currentSpeedValue, 0)
+							local frameDistance =
+								speed * math.max(deltaTime, 0)
+
+							local moveDistance =
+								math.min(frameDistance, distance)
+
+							local nextHorizontal =
+								currentHorizontal + (direction * moveDistance)
+
+							local nextPosition = Vector3.new(
+								nextHorizontal.X,
+								currentPosition.Y,
+								nextHorizontal.Z
+							)
+
+							character:PivotTo(
+								CFrame.lookAt(
+									nextPosition,
+									nextPosition + direction,
+									Vector3.new(0, 1, 0)
+								)
+							)
+
+							rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+							rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+						end
+					end
+
+					-- Use the first selected area that has been processed.
+					break
+				end
+			end
+
+		else
+			-- =========================================================
+			-- AUTO STEAL OFF
+			-- =========================================================
+			-- IMPORTANT:
+			-- Do not set WalkSpeed to 16.
+			-- Do not zero movement velocity.
+			-- Do not call PivotTo.
+			-- Do not call MoveTo.
+			-- Do not call Humanoid:Move().
+			--
+			-- The game's own Humanoid and movement controller are left
+			-- completely alone so the player's original movement speed
+			-- and controls remain intact.
+
+			humanoid.PlatformStand = false
+			humanoid.AutoRotate = true
+		end
+	end)
+end)
+
+print("ClassiFox UI Cleaned & Auto Steal Fixed to Target Eggs Successfully!")
