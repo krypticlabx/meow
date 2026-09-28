@@ -1,0 +1,1554 @@
+--========================================================--
+--                 CLASSICFOX
+--               STEAL AN EGG
+--          BLUE + ORANGE ENERGY UI
+--========================================================--
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local ProximityPromptService = game:GetService("ProximityPromptService")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+--========================================================--
+-- SINGLE EXECUTE
+--========================================================--
+
+if _G.ClassiFoxCleanup then
+	pcall(function()
+		_G.ClassiFoxCleanup()
+	end)
+end
+
+local Connections = {}
+local ScreenGui
+
+local function Connect(connection)
+	table.insert(Connections, connection)
+	return connection
+end
+
+local function Cleanup()
+	for _, connection in ipairs(Connections) do
+		pcall(function()
+			connection:Disconnect()
+		end)
+	end
+
+	table.clear(Connections)
+
+	if ScreenGui then
+		pcall(function()
+			ScreenGui:Destroy()
+		end)
+
+		ScreenGui = nil
+	end
+end
+
+_G.ClassiFoxCleanup = Cleanup
+
+-- Extra protection against duplicate GUI
+for _, gui in ipairs(PlayerGui:GetChildren()) do
+	if gui.Name == "ClassiFoxAntiGuard" then
+		pcall(function()
+			gui:Destroy()
+		end)
+	end
+end
+
+--========================================================--
+-- CONFIG
+--========================================================--
+
+local LOGO_ID = "rbxassetid://129545900336610"
+
+local AntiGuardEnabled = false
+local IsAntiGuardRunning = false
+
+local PROTECT_DURATION = 0.35
+
+--========================================================--
+-- BLUE / ORANGE COLORS
+--========================================================--
+
+local BLUE = Color3.fromRGB(0, 105, 255)
+local BRIGHT_BLUE = Color3.fromRGB(0, 170, 255)
+
+local ORANGE = Color3.fromRGB(255, 100, 0)
+local BRIGHT_ORANGE = Color3.fromRGB(255, 170, 20)
+
+local DARK_BG = Color3.fromRGB(2, 5, 11)
+
+--========================================================--
+-- BLUE + ORANGE GRADIENT
+--========================================================--
+
+local function NewEnergyGradient()
+
+	local Gradient = Instance.new("UIGradient")
+
+	Gradient.Color = ColorSequence.new({
+
+		ColorSequenceKeypoint.new(
+			0.00,
+			BLUE
+		),
+
+		ColorSequenceKeypoint.new(
+			0.16,
+			BRIGHT_BLUE
+		),
+
+		ColorSequenceKeypoint.new(
+			0.30,
+			BLUE
+		),
+
+		ColorSequenceKeypoint.new(
+			0.43,
+			ORANGE
+		),
+
+		ColorSequenceKeypoint.new(
+			0.55,
+			BRIGHT_ORANGE
+		),
+
+		ColorSequenceKeypoint.new(
+			0.68,
+			ORANGE
+		),
+
+		ColorSequenceKeypoint.new(
+			0.82,
+			BRIGHT_BLUE
+		),
+
+		ColorSequenceKeypoint.new(
+			1.00,
+			BLUE
+		)
+	})
+
+	Gradient.Offset = Vector2.new(-1, 0)
+
+	return Gradient
+end
+
+--========================================================--
+-- ANIMATE ENERGY
+--========================================================--
+
+local function AnimateGradient(Gradient, Duration)
+
+	task.spawn(function()
+
+		while Gradient
+			and Gradient.Parent
+			and ScreenGui
+			and ScreenGui.Parent do
+
+			Gradient.Offset =
+				Vector2.new(-1, 0)
+
+			local Tween = TweenService:Create(
+				Gradient,
+				TweenInfo.new(
+					Duration or 1.2,
+					Enum.EasingStyle.Linear,
+					Enum.EasingDirection.InOut
+				),
+				{
+					Offset = Vector2.new(1, 0)
+				}
+			)
+
+			Tween:Play()
+
+			Tween.Completed:Wait()
+
+		end
+
+	end)
+
+end
+
+--========================================================--
+-- GRADIENT BORDER FUNCTION
+--========================================================--
+
+local function CreateEnergyBorder(
+	Parent,
+	CornerRadius,
+	Thickness,
+	ZIndex
+)
+
+	local Border = Instance.new("Frame")
+
+	Border.Name = "EnergyBorder"
+
+	Border.Size = UDim2.new(
+		1,
+		0,
+		1,
+		0
+	)
+
+	Border.Position =
+		UDim2.fromOffset(0, 0)
+
+	Border.BackgroundColor3 = Color3.new(
+		1,
+		1,
+		1
+	)
+
+	Border.BorderSizePixel = 0
+
+	Border.ZIndex = ZIndex or 1
+
+	Border.Parent = Parent
+
+	local BorderCorner = Instance.new("UICorner")
+
+	BorderCorner.CornerRadius =
+		UDim.new(
+			0,
+			CornerRadius
+		)
+
+	BorderCorner.Parent = Border
+
+	local Gradient = NewEnergyGradient()
+
+	Gradient.Parent = Border
+
+	AnimateGradient(
+		Gradient,
+		1.05
+	)
+
+	-- Inner cover
+	local Inner = Instance.new("Frame")
+
+	Inner.Name = "Inner"
+
+	Inner.Size = UDim2.new(
+		1,
+		-(Thickness * 2),
+		1,
+		-(Thickness * 2)
+	)
+
+	Inner.Position =
+		UDim2.fromOffset(
+			Thickness,
+			Thickness
+		)
+
+	Inner.BackgroundColor3 = DARK_BG
+
+	Inner.BorderSizePixel = 0
+
+	Inner.ZIndex =
+		(ZIndex or 1) + 1
+
+	Inner.Parent = Border
+
+	local InnerCorner = Instance.new("UICorner")
+
+	InnerCorner.CornerRadius =
+		UDim.new(
+			0,
+			math.max(
+				0,
+				CornerRadius - Thickness
+			)
+		)
+
+	InnerCorner.Parent = Inner
+
+	return Border, Inner, Gradient
+end
+
+--========================================================--
+-- ANTI GUARD ROUTE
+--========================================================--
+
+local RoutePoints = {
+
+	CFrame.new(
+		500.62,
+		241.28,
+		-366.64
+	),
+
+	CFrame.new(
+		504.45,
+		155.80,
+		-366.35
+	),
+
+	CFrame.new(
+		508.30,
+		70.28,
+		-366.03
+	),
+
+	CFrame.new(
+		513.86,
+		70.28,
+		-366.25
+	),
+
+	CFrame.new(
+		519.43,
+		70.28,
+		-366.47
+	),
+
+	CFrame.new(
+		524.32,
+		70.28,
+		-366.59
+	),
+
+	CFrame.new(
+		529.22,
+		70.28,
+		-366.71
+	),
+
+	CFrame.new(
+		538.01,
+		70.28,
+		-365.55
+	),
+
+	CFrame.new(
+		546.80,
+		70.28,
+		-364.40
+	)
+}
+
+local SAFE_CF =
+	RoutePoints[#RoutePoints]
+
+--========================================================--
+-- CHARACTER ROOT
+--========================================================--
+
+local function GetRoot()
+
+	local Character =
+		Player.Character
+
+	if not Character then
+		return nil
+	end
+
+	return Character:FindFirstChild(
+		"HumanoidRootPart"
+	)
+end
+
+local function ZeroVelocity(Root)
+
+	if not Root then
+		return
+	end
+
+	pcall(function()
+
+		Root.AssemblyLinearVelocity =
+			Vector3.zero
+
+		Root.AssemblyAngularVelocity =
+			Vector3.zero
+
+	end)
+
+end
+
+--========================================================--
+-- ANTI GUARD
+--========================================================--
+
+local function FireAntiGuard()
+
+	local Root =
+		GetRoot()
+
+	if not Root then
+
+		IsAntiGuardRunning =
+			false
+
+		return
+
+	end
+
+	for _, Position in ipairs(RoutePoints) do
+
+		if not AntiGuardEnabled then
+
+			IsAntiGuardRunning =
+				false
+
+			return
+
+		end
+
+		Root.CFrame =
+			Position
+
+	end
+
+	ZeroVelocity(Root)
+
+	local Deadline =
+		tick()
+		+ PROTECT_DURATION
+
+	local Heartbeat
+
+	Heartbeat =
+		RunService.Heartbeat:Connect(
+			function()
+
+				if not AntiGuardEnabled
+					or tick() > Deadline then
+
+					if Heartbeat then
+						Heartbeat:Disconnect()
+					end
+
+					IsAntiGuardRunning =
+						false
+
+					return
+				end
+
+				local CurrentRoot =
+					GetRoot()
+
+				if not CurrentRoot then
+
+					if Heartbeat then
+						Heartbeat:Disconnect()
+					end
+
+					IsAntiGuardRunning =
+						false
+
+					return
+
+				end
+
+				CurrentRoot.CFrame =
+					SAFE_CF
+
+				ZeroVelocity(
+					CurrentRoot
+				)
+
+			end
+		)
+
+	table.insert(
+		Connections,
+		Heartbeat
+	)
+
+end
+
+--========================================================--
+-- CARRY AREA EGG
+--========================================================--
+
+local function MakeCarryAreaEggInstant(Object)
+
+	if Object.Name ==
+		"CarryAreaEgg"
+		and Object:IsA(
+			"ProximityPrompt"
+		) then
+
+		Object.HoldDuration = 0
+
+	end
+
+end
+
+for _, Object in ipairs(
+	Workspace:GetDescendants()
+) do
+
+	MakeCarryAreaEggInstant(
+		Object
+	)
+
+end
+
+Connect(
+	Workspace.DescendantAdded:Connect(
+		function(Object)
+
+			MakeCarryAreaEggInstant(
+				Object
+			)
+
+		end
+	)
+)
+
+--========================================================--
+-- SCREEN GUI
+--========================================================--
+
+ScreenGui = Instance.new("ScreenGui")
+
+ScreenGui.Name =
+	"ClassiFoxAntiGuard"
+
+ScreenGui.ResetOnSpawn =
+	false
+
+ScreenGui.IgnoreGuiInset =
+	true
+
+ScreenGui.DisplayOrder =
+	999999
+
+ScreenGui.ZIndexBehavior =
+	Enum.ZIndexBehavior.Sibling
+
+ScreenGui.Parent =
+	PlayerGui
+
+--========================================================--
+-- MAIN UI (CENTERED)
+--========================================================--
+
+local Main = Instance.new("Frame")
+
+Main.Name = "Main"
+
+Main.Size =
+	UDim2.fromOffset(
+		245,
+		125
+	)
+
+-- Nakaposisyon na sa gitna (AnchorPoint 0.5, 0.5 at UDim2 sa 0.5, 0.5)
+Main.AnchorPoint = Vector2.new(0.5, 0.5)
+Main.Position =
+	UDim2.new(
+		0.5,
+		0,
+		0.5,
+		0
+	)
+
+Main.BackgroundTransparency =
+	1
+
+Main.BorderSizePixel =
+	0
+
+Main.Active =
+	true
+
+Main.ZIndex =
+	10
+
+Main.Parent =
+	ScreenGui
+
+--========================================================--
+-- MAIN ENERGY BORDER
+--========================================================--
+
+local MainBorder, MainInside =
+	CreateEnergyBorder(
+		Main,
+		15,
+		2,
+		10
+	)
+
+-- Inner frame is the actual UI background
+MainInside.BackgroundColor3 =
+	Color3.fromRGB(
+		2,
+		5,
+		11
+	)
+
+--========================================================--
+-- HEADER
+--========================================================--
+
+local Header = Instance.new("Frame")
+
+Header.Name =
+	"DragHeader"
+
+Header.Size =
+	UDim2.new(
+		1,
+		-12,
+		0,
+		48
+	)
+
+Header.Position =
+	UDim2.fromOffset(
+		6,
+		5
+	)
+
+Header.BackgroundTransparency =
+	1
+
+Header.Active =
+	true
+
+Header.ZIndex =
+	30
+
+Header.Parent =
+	MainInside
+
+--========================================================--
+-- HEADER LOGO
+--========================================================--
+
+local HeaderLogoHolder =
+	Instance.new("Frame")
+
+HeaderLogoHolder.Size =
+	UDim2.fromOffset(
+		38,
+		38
+	)
+
+HeaderLogoHolder.Position =
+	UDim2.fromOffset(
+		2,
+		4
+	)
+
+HeaderLogoHolder.BackgroundTransparency =
+	1
+
+HeaderLogoHolder.BorderSizePixel =
+	0
+
+HeaderLogoHolder.ZIndex =
+	31
+
+HeaderLogoHolder.Parent =
+	Header
+
+local HeaderLogoBorder,
+	HeaderLogoInside =
+	CreateEnergyBorder(
+		HeaderLogoHolder,
+		20,
+		1.5,
+		31
+	)
+
+HeaderLogoInside.BackgroundColor3 =
+	Color3.fromRGB(
+		3,
+		7,
+		15
+	)
+
+local HeaderLogo =
+	Instance.new("ImageLabel")
+
+HeaderLogo.Name =
+	"Logo"
+
+HeaderLogo.Size =
+	UDim2.new(
+		1,
+		-4,
+		1,
+		-4
+	)
+
+HeaderLogo.Position =
+	UDim2.fromOffset(
+		2,
+		2
+	)
+
+HeaderLogo.BackgroundTransparency =
+	1
+
+HeaderLogo.Image =
+	LOGO_ID
+
+HeaderLogo.ScaleType =
+	Enum.ScaleType.Fit
+
+HeaderLogo.ZIndex =
+	35
+
+HeaderLogo.Parent =
+	HeaderLogoInside
+
+--========================================================--
+-- TITLE
+--========================================================--
+
+local Title =
+	Instance.new("TextLabel")
+
+Title.Name =
+	"Title"
+
+Title.BackgroundTransparency =
+	1
+
+Title.Position =
+	UDim2.fromOffset(
+		46,
+		3
+	)
+
+Title.Size =
+	UDim2.fromOffset(
+		175,
+		24
+	)
+
+Title.Font =
+	Enum.Font.GothamBold
+
+Title.Text =
+	'<font color="#0095FF">Classic</font><font color="#FF8A00">fox</font>'
+
+Title.RichText =
+	true
+
+Title.TextSize =
+	17
+
+Title.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+Title.ZIndex =
+	36
+
+Title.Parent =
+	Header
+
+--========================================================--
+-- SUBTITLE
+--========================================================--
+
+local Subtitle =
+	Instance.new("TextLabel")
+
+Subtitle.BackgroundTransparency =
+	1
+
+Subtitle.Position =
+	UDim2.fromOffset(
+		47,
+		27
+	)
+
+Subtitle.Size =
+	UDim2.fromOffset(
+		130,
+		15
+	)
+
+Subtitle.Font =
+	Enum.Font.GothamMedium
+
+Subtitle.Text =
+	"Steal An Egg"
+
+Subtitle.TextSize =
+	9
+
+Subtitle.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+Subtitle.TextColor3 =
+	Color3.fromRGB(
+		155,
+		165,
+		180
+	)
+
+Subtitle.ZIndex =
+	36
+
+Subtitle.Parent =
+	Header
+
+--========================================================--
+-- DIVIDER
+--========================================================--
+
+local Divider =
+	Instance.new("Frame")
+
+Divider.Name =
+	"Divider"
+
+Divider.Size =
+	UDim2.new(
+		1,
+		-12,
+		0,
+		2
+	)
+
+Divider.Position =
+	UDim2.fromOffset(
+		6,
+		53
+	)
+
+Divider.BorderSizePixel =
+	0
+
+Divider.BackgroundColor3 =
+	BLUE
+
+Divider.ZIndex =
+	25
+
+Divider.Parent =
+	MainInside
+
+local DividerGradient =
+	NewEnergyGradient()
+
+DividerGradient.Parent =
+	Divider
+
+AnimateGradient(
+	DividerGradient,
+	0.85
+)
+
+--========================================================--
+-- ANTI GUARD BOX
+--========================================================--
+
+local AntiGuard =
+	Instance.new("Frame")
+
+AntiGuard.Name =
+	"AntiGuard"
+
+AntiGuard.Size =
+	UDim2.new(
+		1,
+		-12,
+		0,
+		55
+	)
+
+AntiGuard.Position =
+	UDim2.fromOffset(
+		6,
+		61
+	)
+
+AntiGuard.BackgroundTransparency =
+	1
+
+AntiGuard.BorderSizePixel =
+	0
+
+AntiGuard.ZIndex =
+	26
+
+AntiGuard.Parent =
+	MainInside
+
+local AntiGuardBorder,
+	AntiGuardInside =
+	CreateEnergyBorder(
+		AntiGuard,
+		11,
+		1.5,
+		26
+	)
+
+AntiGuardInside.BackgroundColor3 =
+	Color3.fromRGB(
+		3,
+		7,
+		15
+	)
+
+--========================================================--
+-- ANTI GUARD LABEL
+--========================================================--
+
+local AntiGuardText =
+	Instance.new("TextLabel")
+
+AntiGuardText.BackgroundTransparency =
+	1
+
+AntiGuardText.Position =
+	UDim2.fromOffset(
+		12,
+		0
+	)
+
+AntiGuardText.Size =
+	UDim2.new(
+		1,
+		-85,
+		1,
+		0
+	)
+
+AntiGuardText.Font =
+	Enum.Font.GothamBold
+
+AntiGuardText.Text =
+	"ANTI GUARD"
+
+AntiGuardText.TextSize =
+	12
+
+AntiGuardText.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+AntiGuardText.TextColor3 =
+	Color3.fromRGB(
+		235,
+		240,
+		250
+	)
+
+AntiGuardText.ZIndex =
+	40
+
+AntiGuardText.Parent =
+	AntiGuardInside
+
+--========================================================--
+-- TOGGLE
+--========================================================--
+
+local Toggle =
+	Instance.new("TextButton")
+
+Toggle.Name =
+	"Toggle"
+
+Toggle.Size =
+	UDim2.fromOffset(
+		51,
+		25
+	)
+
+Toggle.Position =
+	UDim2.new(
+		1,
+		-62,
+		0.5,
+		-12
+	)
+
+Toggle.BackgroundColor3 =
+	Color3.fromRGB(
+		55,
+		62,
+		72
+	)
+
+Toggle.BorderSizePixel =
+	0
+
+Toggle.Text =
+	""
+
+Toggle.AutoButtonColor =
+	false
+
+Toggle.ZIndex =
+	41
+
+Toggle.Parent =
+	AntiGuardInside
+
+local ToggleCorner =
+	Instance.new("UICorner")
+
+ToggleCorner.CornerRadius =
+	UDim.new(
+		1,
+		0
+	)
+
+ToggleCorner.Parent =
+	Toggle
+
+--========================================================--
+-- TOGGLE KNOB
+--========================================================--
+
+local ToggleKnob =
+	Instance.new("Frame")
+
+ToggleKnob.Size =
+	UDim2.fromOffset(
+		19,
+		19
+	)
+
+ToggleKnob.Position =
+	UDim2.fromOffset(
+		3,
+		3
+	)
+
+ToggleKnob.BackgroundColor3 =
+	Color3.fromRGB(
+		230,
+		235,
+		245
+	)
+
+ToggleKnob.BorderSizePixel =
+	0
+
+ToggleKnob.ZIndex =
+	42
+
+ToggleKnob.Parent =
+	Toggle
+
+local KnobCorner =
+	Instance.new("UICorner")
+
+KnobCorner.CornerRadius =
+	UDim.new(
+		1,
+		0
+	)
+
+KnobCorner.Parent =
+	ToggleKnob
+
+--========================================================--
+-- TOGGLE UPDATE
+--========================================================--
+
+local function UpdateToggle(Animated)
+
+	local ToggleColor
+	local KnobPosition
+
+	if AntiGuardEnabled then
+
+		ToggleColor =
+			Color3.fromRGB(
+				0,
+				130,
+				245
+			)
+
+		KnobPosition =
+			UDim2.new(
+				1,
+				-22,
+				0,
+				3
+			)
+
+	else
+
+		ToggleColor =
+			Color3.fromRGB(
+				55,
+				62,
+				72
+			)
+
+		KnobPosition =
+			UDim2.fromOffset(
+				3,
+				3
+			)
+
+	end
+
+	if Animated then
+
+		TweenService:Create(
+			Toggle,
+			TweenInfo.new(
+				0.15,
+				Enum.EasingStyle.Quad
+			),
+			{
+				BackgroundColor3 =
+					ToggleColor
+			}
+		):Play()
+
+		TweenService:Create(
+			ToggleKnob,
+			TweenInfo.new(
+				0.15,
+				Enum.EasingStyle.Quad
+			),
+			{
+				Position =
+					KnobPosition
+			}
+		):Play()
+
+	else
+
+		Toggle.BackgroundColor3 =
+			ToggleColor
+
+		ToggleKnob.Position =
+			KnobPosition
+
+	end
+
+end
+
+UpdateToggle(false)
+
+--========================================================--
+-- TOGGLE CLICK
+--========================================================--
+
+Connect(
+	Toggle.MouseButton1Click:Connect(
+		function()
+
+			AntiGuardEnabled =
+				not AntiGuardEnabled
+
+			if not AntiGuardEnabled then
+
+				IsAntiGuardRunning =
+					false
+
+			end
+
+			UpdateToggle(true)
+
+		end
+	)
+)
+
+--========================================================--
+-- MAIN UI DRAG
+--========================================================--
+
+local MainDragging = false
+local MainDragStart
+local MainStartPosition
+
+Connect(
+	Header.InputBegan:Connect(
+		function(Input)
+
+			if Input.UserInputType ==
+				Enum.UserInputType.MouseButton1
+				or
+				Input.UserInputType ==
+				Enum.UserInputType.Touch then
+
+				MainDragging =
+					true
+
+				MainDragStart =
+					Input.Position
+
+				MainStartPosition =
+					Main.Position
+
+			end
+
+		end
+	)
+)
+
+--========================================================--
+-- MAIN UI DRAG MOVEMENT
+--========================================================--
+
+Connect(
+	UserInputService.InputChanged:Connect(
+		function(Input)
+
+			if not MainDragging then
+				return
+			end
+
+			if Input.UserInputType ~=
+				Enum.UserInputType.MouseMovement
+				and
+				Input.UserInputType ~=
+				Enum.UserInputType.Touch then
+
+				return
+			end
+
+			local Delta =
+				Input.Position
+				- MainDragStart
+
+			Main.Position =
+				UDim2.new(
+
+					MainStartPosition.X.Scale,
+
+					MainStartPosition.X.Offset
+						+ Delta.X,
+
+					MainStartPosition.Y.Scale,
+
+					MainStartPosition.Y.Offset
+						+ Delta.Y
+
+				)
+
+		end
+	)
+)
+
+--========================================================--
+-- LOGO BUTTON
+--========================================================--
+
+local LogoButton =
+	Instance.new("ImageButton")
+
+LogoButton.Name =
+	"FloatingLogo"
+
+LogoButton.Size =
+	UDim2.fromOffset(
+		40,
+		40
+	)
+
+LogoButton.Position =
+	UDim2.new(
+		1,
+		-55,
+		0,
+		70
+	)
+
+LogoButton.BackgroundTransparency =
+	1
+
+LogoButton.BorderSizePixel =
+	0
+
+LogoButton.Image =
+	""
+
+LogoButton.AutoButtonColor =
+	false
+
+LogoButton.Active =
+	true
+
+LogoButton.ZIndex =
+	100
+
+LogoButton.Parent =
+	ScreenGui
+
+local LogoBorder,
+	LogoInside =
+	CreateEnergyBorder(
+		LogoButton,
+		20,
+		2,
+		100
+	)
+
+LogoInside.BackgroundColor3 =
+	Color3.fromRGB(
+		2,
+		6,
+		14
+	)
+
+local FloatingLogo =
+	Instance.new("ImageLabel")
+
+FloatingLogo.Size =
+	UDim2.new(
+		1,
+		-5,
+		1,
+		-5
+	)
+
+FloatingLogo.Position =
+	UDim2.fromOffset(
+		2.5,
+		2.5
+	)
+
+FloatingLogo.BackgroundTransparency =
+	1
+
+FloatingLogo.Image =
+	LOGO_ID
+
+FloatingLogo.ScaleType =
+	Enum.ScaleType.Fit
+
+FloatingLogo.ZIndex =
+	105
+
+FloatingLogo.Parent =
+	LogoInside
+
+--========================================================--
+-- LOGO DRAG
+--========================================================--
+
+local LogoDragging = false
+local LogoDragStart
+local LogoStartPosition
+local LogoMoved = false
+
+Connect(
+	LogoButton.InputBegan:Connect(
+		function(Input)
+
+			if Input.UserInputType ==
+				Enum.UserInputType.MouseButton1
+				or
+				Input.UserInputType ==
+				Enum.UserInputType.Touch then
+
+				LogoDragging =
+					true
+
+				LogoMoved =
+					false
+
+				LogoDragStart =
+					Input.Position
+
+				LogoStartPosition =
+					LogoButton.Position
+
+			end
+
+		end
+	)
+)
+
+--========================================================--
+-- LOGO MOVEMENT
+--========================================================--
+
+Connect(
+	UserInputService.InputChanged:Connect(
+		function(Input)
+
+			if not LogoDragging then
+				return
+			end
+
+			if Input.UserInputType ~=
+				Enum.UserInputType.MouseMovement
+				and
+				Input.UserInputType ~=
+				Enum.UserInputType.Touch then
+
+				return
+
+			end
+
+			local Delta =
+				Input.Position
+				- LogoDragStart
+
+			if math.abs(Delta.X) > 5
+				or math.abs(Delta.Y) > 5 then
+
+				LogoMoved =
+					true
+
+			end
+
+			if LogoMoved then
+
+				LogoButton.Position =
+					UDim2.new(
+
+						LogoStartPosition.X.Scale,
+
+						LogoStartPosition.X.Offset
+							+ Delta.X,
+
+						LogoStartPosition.Y.Scale,
+
+						LogoStartPosition.Y.Offset
+							+ Delta.Y
+
+					)
+
+			end
+
+		end
+	)
+)
+
+--========================================================--
+-- INPUT ENDED
+--========================================================--
+
+Connect(
+	UserInputService.InputEnded:Connect(
+		function(Input)
+
+			if Input.UserInputType ~=
+				Enum.UserInputType.MouseButton1
+				and
+				Input.UserInputType ~=
+				Enum.UserInputType.Touch then
+
+				return
+
+			end
+
+			MainDragging =
+				false
+
+			if LogoDragging then
+
+				LogoDragging =
+					false
+
+				-- TAP = SHOW/HIDE
+				-- DRAG = MOVE ONLY
+				if not LogoMoved then
+
+					Main.Visible =
+						not Main.Visible
+
+				end
+
+				LogoMoved =
+					false
+
+			end
+
+		end
+	)
+)
+
+--========================================================--
+-- ANTI GUARD TRIGGER
+--========================================================--
+
+Connect(
+	ProximityPromptService.PromptTriggered:Connect(
+		function(
+			Prompt,
+			TriggeringPlayer
+		)
+
+			if TriggeringPlayer ~=
+				Player then
+
+				return
+
+			end
+
+			if not AntiGuardEnabled then
+				return
+			end
+
+			if IsAntiGuardRunning then
+				return
+			end
+
+			IsAntiGuardRunning =
+				true
+
+			task.spawn(
+				function()
+					FireAntiGuard()
+				end
+			)
+
+		end
+	)
+)
+
+--========================================================--
+-- CHARACTER RESPAWN
+--========================================================--
+
+Connect(
+	Player.CharacterAdded:Connect(
+		function()
+
+			task.wait(0.5)
+
+			if ScreenGui
+				and not ScreenGui.Parent then
+
+				ScreenGui.Parent =
+					Player:WaitForChild(
+						"PlayerGui"
+					)
+
+			end
+
+		end
+	)
+)
+
+--========================================================--
+-- START
+--========================================================--
+
+print(
+	"[Classicfox] Loaded."
+)
+
+print(
+	"[Classicfox] REAL BLUE + ORANGE ENERGY BORDER."
+)
+
+print(
+	"[Classicfox] Classic = Blue | fox = Orange."
+)
+
+print(
+	"[Classicfox] Single Execute protection active."
+)
